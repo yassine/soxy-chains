@@ -15,8 +15,6 @@ import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -26,11 +24,6 @@ import java.util.Set;
 class SoxyChainsModule extends AbstractModule {
 
   private final InputStream configStream;
-
-  @SneakyThrows
-  public SoxyChainsModule(String configPath) {
-    this(new FileInputStream(new File(configPath)));
-  }
 
   @Override
   protected void configure() {

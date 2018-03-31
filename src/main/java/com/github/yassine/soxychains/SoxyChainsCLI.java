@@ -16,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -29,12 +31,14 @@ public class SoxyChainsCLI {
   private final Cli<Runnable> cli;
   private final Set<Module> modules;
 
+  @SneakyThrows
   public void run(String... args){
     Runnable runnable = cli.parse(args);
     ArrayList<Module> ms = new ArrayList<>(this.modules);
     if(runnable instanceof ConfigurableCommand){
       String configPath = ((ConfigurableCommand) runnable).getConfigPath();
-      ms.add(new SoxyChainsModule(configPath));
+      FileInputStream fis = new FileInputStream(new File(configPath));
+      ms.add(new SoxyChainsModule(fis));
       Injector injector = Guice.createInjector(ms);
       injector.injectMembers(runnable);
     }
