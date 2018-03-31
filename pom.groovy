@@ -13,16 +13,21 @@ project {
     'project.build.sourceEncoding' 'UTF-8'
   }
   dependencies {
+    dependency 'com.fasterxml.jackson.core:jackson-annotations:2.8.5'
+    dependency 'com.fasterxml.jackson.core:jackson-core:2.8.5'
+    dependency 'com.fasterxml.jackson.core:jackson-databind:2.8.5'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.8.5'
+    dependency 'com.github.yassine:guice-artifacts:0.1.1'
     dependency 'com.google.auto.service:auto-service:1.0-rc3'
     dependency 'com.google.guava:guava:21.0'
-    dependency 'com.google.inject:guice:4.1.0'
     dependency 'com.google.inject.extensions:guice-multibindings:4.1.0'
+    dependency 'com.google.inject:guice:4.1.0'
     dependency 'io.airlift:airline:0.7'
     dependency 'io.github.lukehutch:fast-classpath-scanner:2.0.8'
+    dependency 'net.jodah:typetools:0.5.0'
     dependency 'org.glassfish:javax.el:3.0.1-b08'
     dependency 'org.hibernate.validator:hibernate-validator:6.0.5.Final'
     dependency 'org.projectlombok:lombok:1.16.18:provided'
-    dependency 'net.jodah:typetools:0.5.0'
     //logging
     dependency 'org.apache.logging.log4j:log4j-api:2.10.0'
     dependency 'org.apache.logging.log4j:log4j-core:2.10.0'
@@ -152,6 +157,12 @@ project {
           argLine '${surefireArgLine}'
         }
       }
+    }
+  }
+  repositories {
+    repository {
+      id 'jitpack.io'
+      url 'https://jitpack.io'
     }
   }
 }
