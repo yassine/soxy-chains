@@ -157,6 +157,15 @@ project {
           argLine '${surefireArgLine}'
         }
       }
+      plugin {
+        groupId 'org.eluder.coveralls'
+        artifactId 'coveralls-maven-plugin'
+        version '4.3.0'
+        configuration {
+          repoToken '${env.COVERALLS_REPO_KEY}'
+          jacocoReports '${project.reporting.outputDirectory}/code-coverage/jacoco.xml'
+        }
+      }
     }
   }
   repositories {

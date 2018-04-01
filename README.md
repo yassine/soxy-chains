@@ -32,7 +32,7 @@ layers:
         - fr,de,gb,hu,it,pl,sl,se,dk,no,cz,bg,hr,ro,sc,nl,sk
       exitNodesCountries:
         - fr,de,gb,hu,it,pl,sl,se,dk,no,cz,bg,hr,ro,sc,nl,sk
-  - type     : vpn
+  - type: vpn
     #Requirement 1
     maxNodes : 30
     healthCheckInterval : 60s
