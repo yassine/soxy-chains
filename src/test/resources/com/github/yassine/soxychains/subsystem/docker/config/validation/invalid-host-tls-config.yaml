@@ -1,0 +1,5 @@
+docker:
+  namespace: soxy-chains-testing
+  hosts:
+   - uri: tcp://10.1.1.2:1717
+     usesTLS: true
