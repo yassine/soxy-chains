@@ -1,7 +1,5 @@
-### Idea files
-*.iml
-.idea/
-### Maven files
+### Maven template
 target/
-
-
+# IntelliJ project files
+.idea/
+*.iml
