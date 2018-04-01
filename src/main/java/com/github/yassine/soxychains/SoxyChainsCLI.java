@@ -64,31 +64,25 @@ public class SoxyChainsCLI {
     @SneakyThrows
     public SoxyChainsCLI build(){
       ClassPath classPath = ClassPath.from(SoxyChainsApplication.class.getClassLoader());
-
       Set<Package> packages = classPath.getTopLevelClassesRecursive(cliCommandsPackage.getName())
         .stream()
         .filter(c -> c.getSimpleName().equals("package-info"))
         .map(c -> c.load().getPackage())
         .filter(pkg -> pkg.isAnnotationPresent(CommandGroup.class))
         .collect(Collectors.toSet());
+
       ImmutableMap<String, Package> packageIndex = Maps.uniqueIndex(packages, Package::getName);
-
       ImmutableSet.Builder<Class> builder = ImmutableSet.builder();
-
       FastClasspathScanner scanner = new FastClasspathScanner(cliCommandsPackage.getName());
       scanner.matchClassesWithAnnotation(Command.class, builder::add);
       scanner.scan();
 
-      Set<Class> commands = builder.build();
+      ImmutableMultimap<String,Class> commandIndex = Multimaps.index(builder.build(), command -> command.getPackage().getName());
 
-      ImmutableMultimap<String,Class> commandIndex = Multimaps.index(commands, command -> command.getPackage().getName());
-
-
-      Cli.CliBuilder<Runnable> cliBuilder = new Cli.CliBuilder<Runnable>("tabakat")
-        .withDescription("multi-layer anonymity application")
+      Cli.CliBuilder<Runnable> cliBuilder = new Cli.CliBuilder<Runnable>("soxy-chains")
+        .withDescription("A scalable multi-layer TCP traffic tunneling application")
         .withDefaultCommand(Help.class)
         .withCommands(Help.class);
-
       commandIndex.keySet()
         .forEach(key -> {
           Package p = packageIndex.get(key);
@@ -102,7 +96,7 @@ public class SoxyChainsCLI {
         });
 
       return new SoxyChainsCLI(cliBuilder.build(), modules);
-    }
 
+    }
   }
 }
