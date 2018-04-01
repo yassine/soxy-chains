@@ -7,18 +7,10 @@
     <Console name="SOXYCHAINS" target="SYSTEM_OUT">
       <PatternLayout pattern="%highlight{%d{HH:mm:ss.SSS} %-5level %logger{36}.%M() @%L - %msg%n}{FATAL=red blink, ERROR=red, WARN=yellow bold, INFO=blue bold, DEBUG=green bold, TRACE=blue}"/>
     </Console>
-    <!--
-    <File name="MyFile" fileName="/tmp/docker-lambda.log">
-      <PatternLayout pattern="%highlight{%d{HH:mm:ss.SSS} %-5level %logger{36}.%M() @%L - %msg%n}{FATAL=red blink, ERROR=red, WARN=yellow bold, INFO=black, DEBUG=green bold, TRACE=blue}"/>
-    </File>
-    -->
   </Appenders>
   <Loggers>
     <Logger name="com.github.yassine" level="debug" additivity="false">
       <AppenderRef ref="SOXYCHAINS"/>
-      <!--
-      <AppenderRef ref="MyFile"/>
-      -->
     </Logger>
     <Logger name="org.apache.camel" level="info" additivity="false">
       <AppenderRef ref="COLORFUL"/>
