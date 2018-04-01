@@ -1,0 +1,11 @@
+language: java
+sudo: required
+dist: trusty
+services:
+  - docker
+install:
+  - mvn package -DskipTests=true
+script:
+  - mvn install
+after_success:
+  - mvn coveralls:report
