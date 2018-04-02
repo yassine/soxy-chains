@@ -28,7 +28,7 @@ project {
         }
       }
     }
-    dependency 'com.github.yassine:guice-artifacts:0.1.1'
+    dependency 'com.github.yassine:guice-artifacts:0.2.0'
     dependency 'com.google.auto.service:auto-service:1.0-rc3'
     dependency 'com.google.guava:guava:21.0'
     dependency 'com.google.inject.extensions:guice-multibindings:4.1.0'
@@ -40,6 +40,17 @@ project {
     dependency 'org.glassfish:javax.el:3.0.1-b08'
     dependency 'org.hibernate.validator:hibernate-validator:6.0.5.Final'
     dependency 'org.projectlombok:lombok:1.16.18:provided'
+    dependency{
+      groupId 'com.machinezoo.noexception'
+      artifactId 'noexception'
+      version '1.2.0'
+      exclusions{
+        exclusion{
+          groupId 'org.slf4j'
+          artifactId 'slf4j-api'
+        }
+      }
+    }
     //logging
     dependency 'org.apache.logging.log4j:log4j-api:2.10.0'
     dependency 'org.apache.logging.log4j:log4j-core:2.10.0'
