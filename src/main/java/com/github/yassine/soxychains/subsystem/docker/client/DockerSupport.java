@@ -129,7 +129,7 @@ class DockerSupport implements Docker {
         }catch (Exception e){
           log.error(format("Couldn't create container '%s' : %s", containerName, e.getMessage()));
           log.error(e.getMessage(), e);
-          return CreateContainerStatus.of((Container) null, format("Couldn't create container '%s' : %s", containerName, e.getMessage()), false);
+          return CreateContainerStatus.of(null, format("Couldn't create container '%s' : %s", containerName, e.getMessage()), false);
         }
       }
       )

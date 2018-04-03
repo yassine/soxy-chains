@@ -6,6 +6,6 @@ services:
 install:
   - mvn package -DskipTests=true
 script:
-  - mvn install
+  - mvn test post-integration-test
 after_success:
   - mvn coveralls:report

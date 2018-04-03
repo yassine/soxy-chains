@@ -4,8 +4,14 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.github.yassine.soxychains.core.PluginsConfigDeserializer;
 import com.github.yassine.soxychains.subsystem.docker.DockerModule;
+import com.github.yassine.soxychains.subsystem.service.ServicesConfiguration;
+import com.github.yassine.soxychains.subsystem.service.ServicesModule;
+import com.github.yassine.soxychains.subsystem.service.ServicesPlugin;
+import com.github.yassine.soxychains.subsystem.service.ServicesPluginConfiguration;
 import com.google.inject.AbstractModule;
 import com.google.inject.BindingAnnotation;
 import com.google.inject.Provides;
@@ -17,6 +23,7 @@ import javax.validation.*;
 import java.io.InputStream;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.Map;
 import java.util.Set;
 
 @RequiredArgsConstructor
@@ -28,6 +35,8 @@ public class SoxyChainsModule extends AbstractModule {
   protected void configure() {
     install(new ConfigurationModule(configStream));
     install(new DockerModule());
+    install(new ServicesModule());
+    requestStaticInjection(PluginsConfigDeserializer.class);
   }
 
   @RequiredArgsConstructor
@@ -35,13 +44,17 @@ public class SoxyChainsModule extends AbstractModule {
 
     private final InputStream configStream;
 
-    @Provides
-    @Singleton
-    @Configuration
+    @SuppressWarnings("unchecked")
+    @Provides @Singleton @Configuration
     ObjectMapper getConfigurationMapper(){
       ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
       mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
       mapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
+      SimpleModule simpleModule = new SimpleModule();
+      simpleModule.addDeserializer(ServicesConfiguration.class,
+        new PluginsConfigDeserializer( ServicesPlugin.class,
+              (map) -> new ServicesConfiguration((Map<String, ServicesPluginConfiguration>) map)));
+      mapper.registerModule(simpleModule);
       return mapper;
     }
 

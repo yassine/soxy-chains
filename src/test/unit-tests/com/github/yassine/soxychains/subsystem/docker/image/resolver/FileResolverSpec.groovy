@@ -17,7 +17,7 @@ class FileResolverSpec extends Specification {
   DockerImageResourceResolver resolver
 
   def setupSpec() {
-    Injector injector = Guice.createInjector();
+    Injector injector = Guice.createInjector()
     resolver = injector.getInstance(FileResolver.class)
   }
 

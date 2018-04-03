@@ -6,7 +6,10 @@ import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProviderSupport;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
 import com.github.yassine.soxychains.subsystem.docker.image.DockerImageModule;
-import com.google.inject.*;
+import com.google.inject.Exposed;
+import com.google.inject.PrivateModule;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
 
 public class DockerModule extends PrivateModule{
 

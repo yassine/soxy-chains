@@ -1,0 +1,5 @@
+plugins:
+  plugin_a:
+    param_a: valueA
+  plugin_b:
+    param_b: valueB

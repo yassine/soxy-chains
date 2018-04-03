@@ -1,0 +1,18 @@
+{
+  "ports":{
+    "http"     : ${config.servicePort?c},
+    "dns"      : 8600,
+    "https"    : -1,
+    "rpc"      : 8400,
+    "serf_lan" : 8301,
+    "serf_wan" : 8302,
+    "server"   : 8300
+  },
+  "log_level"   : "info",
+  "bind_addr"   : "0.0.0.0",
+  "bootstrap"   : true,
+  "data_dir"    : "/data/consul",
+  "ui"          : true,
+  "server"      : true,
+  "client_addr" : "0.0.0.0"
+}

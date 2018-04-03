@@ -1,0 +1,3 @@
+[api]
+enabled = true  # true | false
+bind    = ":${config.apiPort?c}"  # bind host:port
