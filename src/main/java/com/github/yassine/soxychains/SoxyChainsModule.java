@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.github.yassine.soxychains.core.PluginsConfigDeserializer;
+import com.github.yassine.soxychains.plugin.Plugin;
 import com.github.yassine.soxychains.subsystem.docker.DockerModule;
 import com.github.yassine.soxychains.subsystem.service.ServicesConfiguration;
 import com.github.yassine.soxychains.subsystem.service.ServicesModule;
@@ -53,7 +54,7 @@ public class SoxyChainsModule extends AbstractModule {
       SimpleModule simpleModule = new SimpleModule();
       simpleModule.addDeserializer(ServicesConfiguration.class,
         new PluginsConfigDeserializer( ServicesPlugin.class,
-              (map) -> new ServicesConfiguration((Map<String, ServicesPluginConfiguration>) map)));
+              (map) -> new ServicesConfiguration((Map<Class<? extends Plugin<ServicesPluginConfiguration>>, ServicesPluginConfiguration>) map)));
       mapper.registerModule(simpleModule);
       return mapper;
     }

@@ -1,12 +1,13 @@
 package com.github.yassine.soxychains.subsystem.service.gobetween;
 
+import com.github.yassine.soxychains.plugin.ConfigKey;
 import com.github.yassine.soxychains.subsystem.service.ServicesPluginConfiguration;
 import lombok.Getter;
 
 import javax.validation.constraints.NotNull;
 
-@Getter
-public class GobetweenServicesPluginConfiguration implements ServicesPluginConfiguration {
+@Getter  @ConfigKey("gobetween")
+public class GobetweenConfiguration implements ServicesPluginConfiguration {
   @NotNull
   private String  image       = "gobetween";
   @NotNull

@@ -1,8 +1,10 @@
 package com.github.yassine.soxychains.subsystem.layer;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.github.yassine.soxychains.subsystem.docker.image.config.DockerImage;
 import lombok.Getter;
 
+import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 
 @Getter
@@ -19,4 +21,6 @@ public abstract class AbstractLayerConfiguration implements Serializable{
   protected double readyRatio = 0.5;
   private String healthCheckInterval = "45s";
   private String healthCheckTimeout  = "120s";
+  @NotNull
+  protected DockerImage image;
 }

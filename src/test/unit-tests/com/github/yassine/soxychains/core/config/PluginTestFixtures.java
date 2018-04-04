@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.github.yassine.soxychains.core.PluginsConfigDeserializer;
+import com.github.yassine.soxychains.plugin.ConfigKey;
 import com.github.yassine.soxychains.plugin.Plugin;
 import com.github.yassine.soxychains.plugin.PluginConfiguration;
 import com.github.yassine.soxychains.plugin.PluginSetConfiguration;
@@ -20,23 +21,15 @@ public class PluginTestFixtures {
 
   @AutoService(TestPlugin.class)
   public static class PluginA implements TestPlugin<PluginAConfiguration>, Plugin<PluginAConfiguration> {
-    @Override
-    public String configKey() {
-      return "pluginA";
-    }
   }
-  @Getter
+  @Getter  @ConfigKey("pluginA")
   public static class PluginAConfiguration implements PluginConfiguration{
     private String paramA;
   }
   @AutoService(TestPlugin.class)
   public static class PluginB implements TestPlugin<PluginBConfiguration>, Plugin<PluginBConfiguration> {
-    @Override
-    public String configKey() {
-      return "pluginB";
-    }
   }
-  @Getter
+  @Getter @ConfigKey("pluginB")
   public static class PluginBConfiguration implements PluginConfiguration{
     private String paramB;
   }
@@ -54,7 +47,6 @@ public class PluginTestFixtures {
       module.addDeserializer(PluginSetConfiguration.class, new PluginsConfigDeserializer(TestPlugin.class));
       mapper.registerModule(module);
       bind(ObjectMapper.class).toInstance(mapper);
-      requestStaticInjection(PluginsConfigDeserializer.class);
     }
   }
 }

@@ -6,7 +6,7 @@ import lombok.Getter;
 import javax.validation.constraints.NotNull;
 
 @Getter
-public class DnsServicesPluginConfiguration implements ServicesPluginConfiguration {
+public class DnsConfiguration implements ServicesPluginConfiguration {
   @NotNull
   private String image = "dns-server";
   @NotNull

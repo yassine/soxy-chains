@@ -15,10 +15,9 @@ class PluginsConfigDeserializerSpec extends Specification {
     when:
     InputStream is = getClass().getResourceAsStream("deserialize_config.yaml")
     PluginTestFixtures.RootConfiguration rootConfiguration = objectMapper.readValue(is, PluginTestFixtures.RootConfiguration.class)
-    PluginTestFixtures.PluginAConfiguration configA = (PluginTestFixtures.PluginAConfiguration) rootConfiguration.getPlugins().get("plugin_a")
-    PluginTestFixtures.PluginBConfiguration configB = (PluginTestFixtures.PluginBConfiguration) rootConfiguration.getPlugins().get("plugin_b")
+    PluginTestFixtures.PluginAConfiguration configA = (PluginTestFixtures.PluginAConfiguration) rootConfiguration.getPlugins().get(PluginTestFixtures.PluginA)
+    PluginTestFixtures.PluginBConfiguration configB = (PluginTestFixtures.PluginBConfiguration) rootConfiguration.getPlugins().get(PluginTestFixtures.PluginB)
     then:
-    rootConfiguration.getPlugins().get("plugin_a") != null
     configA.getParamA() == "valueA"
     configB.getParamB() == "valueB"
   }

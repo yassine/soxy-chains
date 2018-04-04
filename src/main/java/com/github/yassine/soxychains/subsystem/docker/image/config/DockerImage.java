@@ -13,7 +13,7 @@ import javax.validation.constraints.NotNull;
   include  = JsonTypeInfo.As.PROPERTY,
   property = "type")
 @JsonSubTypes({
-  @JsonSubTypes.Type(value = RemoteDockerImage.class, name = "static"),
+  @JsonSubTypes.Type(value = RemoteDockerImage.class, name = "remote"),
   @JsonSubTypes.Type(value = FloatingDockerImage.class, name = "lambda")
 })
 @Getter @EqualsAndHashCode(of = "name") @RequiredArgsConstructor

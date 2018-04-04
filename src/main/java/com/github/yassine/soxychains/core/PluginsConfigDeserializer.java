@@ -11,9 +11,8 @@ import com.github.yassine.soxychains.plugin.Plugin;
 import com.github.yassine.soxychains.plugin.PluginConfiguration;
 import com.github.yassine.soxychains.plugin.PluginSetConfiguration;
 import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
-import com.google.inject.Injector;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -24,22 +23,24 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.github.yassine.artifacts.guice.utils.GuiceUtils.loadSPIClasses;
+import static com.github.yassine.soxychains.plugin.PluginUtils.configKey;
+import static com.github.yassine.soxychains.plugin.PluginUtils.defaultConfig;
 import static com.google.common.collect.Streams.stream;
-import static java.util.Optional.ofNullable;
+import static com.machinezoo.noexception.Exceptions.sneak;
+import static net.jodah.typetools.TypeResolver.resolveRawArgument;
+import static net.jodah.typetools.TypeResolver.resolveRawArguments;
 
+@Slf4j
 public class PluginsConfigDeserializer<CONFIG extends PluginSetConfiguration<?>> extends StdDeserializer<CONFIG>{
 
   private final Class<? extends Plugin> pluginContract;
-  private Function<Map<String, PluginConfiguration>, CONFIG> transform = (map) -> (CONFIG) new DefaultPluginSetConfiguration(map);
-  @Inject
-  private static Injector injector;
+  private Function<Map<Class<? extends Plugin>, PluginConfiguration>, CONFIG> transform = (map) -> (CONFIG) new DefaultPluginSetConfiguration(map);
 
-  public PluginsConfigDeserializer(Class<? extends Plugin> pluginContract, Function<Map<String, PluginConfiguration>, CONFIG> transform) {
+  public PluginsConfigDeserializer(Class<? extends Plugin> pluginContract, Function<Map<Class<? extends Plugin>, PluginConfiguration>, CONFIG> transform) {
     super(PluginSetConfiguration.class);
     this.pluginContract = pluginContract;
     this.transform = transform;
   }
-
 
   public PluginsConfigDeserializer(Class<? extends Plugin> pluginContract) {
     super(PluginSetConfiguration.class);
@@ -51,30 +52,35 @@ public class PluginsConfigDeserializer<CONFIG extends PluginSetConfiguration<?>>
     ObjectMapper mapper = (ObjectMapper) jp.getCodec();
     ObjectNode root     = mapper.readTree(jp);
     PropertyNamingStrategy propertyNamingStrategy = mapper.getPropertyNamingStrategy();
-    List<Plugin> plugins = loadSPIClasses(pluginContract).stream()
-                            .map(injector::getInstance)
+    List<Class<? extends Plugin>> pluginImplementations = loadSPIClasses(pluginContract).stream()
+                            .filter(clazz -> resolveRawArguments(Plugin.class, clazz).length > 0)
                             .collect(Collectors.toList());
-    ImmutableMap.Builder<String, PluginConfiguration> builder = ImmutableMap.builder();
+    ImmutableMap.Builder<Class<? extends Plugin>, PluginConfiguration> builder = ImmutableMap.builder();
     stream(root.fields())
       .filter(field -> !StringUtils.isEmpty(field.getKey()))
-      .flatMap( field -> plugins.stream()
-        .filter(plugin -> plugin.configKey().equals(field.getKey()) || translate(plugin.configKey(), propertyNamingStrategy).equals(field.getKey()))
-        .map(plugin -> ofNullable(safeRead(mapper, plugin.defaultConfiguration().getClass(), field.getValue().toString()))
-                          .map(config -> Pair.of(plugin.configKey(), config))
-                          .orElse(Pair.of(plugin.configKey(), plugin.defaultConfiguration())))
-      ).forEach(p -> {
-        builder.put(p.getKey(), p.getValue());
-        if(!p.getKey().equals(translate(p.getKey(), propertyNamingStrategy))){
-          builder.put(translate(p.getKey(), propertyNamingStrategy), p.getValue());
-        }
+      .flatMap( field -> pluginImplementations.stream()
+        .filter(pluginClass -> equalKeys(propertyNamingStrategy, field.getKey(), pluginClass))
+        .map(pluginClass -> Pair.of(pluginClass, (PluginConfiguration) safeRead(mapper, pluginClass, field.getValue().toString())))
+      ).forEach(p -> builder.put(p.getKey(), p.getValue()));
+    pluginImplementations.stream()
+      .filter(pluginClass -> stream(root.fields()).map(Map.Entry::getKey).noneMatch(key -> equalKeys(propertyNamingStrategy, key, pluginClass)) )
+      .forEach(pluginClass -> {
+        //TODO check there is a no-arg constructor as per pec
+        Class<? extends PluginConfiguration> pluginConfigClass = (Class<? extends PluginConfiguration>) resolveRawArgument(Plugin.class, pluginClass);
+        PluginConfiguration config = sneak().get(() -> pluginConfigClass.newInstance());
+        builder.put(pluginClass, config);
       });
-    //noinspection unchecked
     return transform.apply(builder.build());
   }
 
   @SneakyThrows
-  private PluginConfiguration safeRead(ObjectMapper mapper, Class<? extends PluginConfiguration> configurationClass, String value) {
-    return mapper.readValue(value, configurationClass);
+  private <CONFIG extends PluginConfiguration> CONFIG safeRead(ObjectMapper mapper, Class<? extends Plugin> pluginClass, String value) {
+    CONFIG config = (CONFIG) mapper.readValue(value, resolveRawArgument(Plugin.class, pluginClass));
+    return config != null ? config : defaultConfig(pluginClass);
+  }
+
+  private boolean equalKeys(PropertyNamingStrategy propertyNamingStrategy, String foundKey, Class<? extends Plugin> pluginClass){
+    return foundKey.equals(configKey(pluginClass)) || foundKey.equals(translate(configKey(pluginClass), propertyNamingStrategy));
   }
 
   private String translate(String name, PropertyNamingStrategy propertyNamingStrategy){
@@ -84,5 +90,6 @@ public class PluginsConfigDeserializer<CONFIG extends PluginSetConfiguration<?>>
     }
     return name;
   }
+
 
 }
