@@ -1,7 +1,7 @@
 package com.github.yassine.soxychains.subsystem.layer;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.github.yassine.soxychains.subsystem.docker.image.config.DockerImage;
+import com.github.yassine.soxychains.subsystem.docker.image.api.DockerImage;
 import lombok.Getter;
 
 import javax.validation.constraints.NotNull;

@@ -7,10 +7,11 @@ import javax.validation.constraints.NotNull;
 
 @Getter
 public class DnsConfiguration implements ServicesPluginConfiguration {
+  public static final String ID = "dns_server";
   @NotNull
-  private String image = "dns-server";
+  private String image = "dns_server";
   @NotNull
-  private String  serviceName    = "dns-server";
+  private String  serviceName    = "dns_server";
   @NotNull
   private Integer servicePort    = 53;
   @NotNull

@@ -16,6 +16,7 @@ public class DockerImageModule extends PrivateModule{
       .to(FileResolver.class)
       .in(Singleton.class);
     bind(DockerImageResolver.class).asEagerSingleton();
+
     expose(DockerImageResolver.class);
   }
 }

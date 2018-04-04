@@ -6,12 +6,15 @@ import lombok.Getter;
 
 import javax.validation.constraints.NotNull;
 
-@Getter @ConfigKey("consul")
+import static com.github.yassine.soxychains.subsystem.service.consul.ConsulConfiguration.ID;
+
+@Getter @ConfigKey(ID)
 public class ConsulConfiguration implements ServicesPluginConfiguration {
+  public static final String ID = "consul";
   @NotNull
-  private String image = "consul";
+  private String image = ID;
   @NotNull
-  private String  serviceName    = "consul";
+  private String  serviceName    = ID;
   @NotNull
   private Integer servicePort    = 7090;
   @NotNull

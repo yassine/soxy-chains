@@ -10,7 +10,9 @@ public class PluginUtils {
     return (CONFIG) (resolveRawArgument(Plugin.class, pluginContract)).newInstance();
   }
 
-
+  public static <CONFIG extends PluginConfiguration> Class<CONFIG> configClassOf(Class <? extends Plugin<CONFIG>> pluginContract){
+    return (Class<CONFIG>) resolveRawArgument(Plugin.class, pluginContract);
+  }
   public static String configKey(Class<? extends Plugin> pluginContract){
     Class<? extends PluginConfiguration> configClass = ((Class<? extends PluginConfiguration>) resolveRawArgument(Plugin.class, pluginContract));
     if(configClass.isAnnotationPresent(ConfigKey.class)){

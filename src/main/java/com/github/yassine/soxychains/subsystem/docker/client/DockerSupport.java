@@ -10,7 +10,9 @@ import com.github.yassine.soxychains.subsystem.docker.config.DockerHostConfigura
 import com.google.common.base.Strings;
 import io.reactivex.Maybe;
 import io.reactivex.schedulers.Schedulers;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -26,15 +28,15 @@ import static java.util.Optional.ofNullable;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 
-@RequiredArgsConstructor @Slf4j
+@RequiredArgsConstructor @Slf4j @Accessors(fluent = true)
 class DockerSupport implements Docker {
-
-  private final SoxyChainsDockerClient docker;
+  @Getter
+  private final SoxyChainsDockerClient client;
 
   @Override
   public Maybe<Image> findImageByTag(String imageTag) {
     return Maybe.fromFuture( supplyAsync( () ->
-      docker.listImagesCmd()
+      client.listImagesCmd()
         .exec()
         .stream()
         .filter(image -> stream(ofNullable(image.getRepoTags()).orElse(new String[0]))
@@ -49,7 +51,7 @@ class DockerSupport implements Docker {
   @Override
   public Maybe<String> createNetwork(String networkName, Consumer<CreateNetworkCmd> beforeCreate, Consumer<String> afterCreate) {
     return Maybe.fromFuture( supplyAsync( () ->
-        docker.listNetworksCmd().exec().stream()
+        client.listNetworksCmd().exec().stream()
           .filter(network -> network.getName().equals(networkName))
           .findAny()
           .map( network -> {
@@ -58,7 +60,7 @@ class DockerSupport implements Docker {
             }
           )
           .orElse( Maybe.just(1)
-            .flatMap( value -> new SyncDockerExecutor<>(docker.createNetworkCmd().withName(networkName), docker.configuration())
+            .flatMap( value -> new SyncDockerExecutor<>(client.createNetworkCmd().withName(networkName), client.configuration())
               .withSuccessFormatter( (v) -> format("Successfully created network '%s' to id '%s' ", networkName, v.getId()) )
               .withErrorFormatter( (e) -> format("An occurred while creating network '%s' : '%s'", networkName, e.getMessage()) )
               .withBeforeExecute( beforeCreate )
@@ -76,11 +78,11 @@ class DockerSupport implements Docker {
   @Override
   public Maybe<Boolean> removeNetwork(String networkName, Consumer<RemoveNetworkCmd> beforeRemove, Consumer<String> afterRemove) {
     return Maybe.fromFuture(supplyAsync(() ->
-      docker.listNetworksCmd().exec().stream()
+      client.listNetworksCmd().exec().stream()
         .filter(network -> network.getName().equals(networkName))
         .findAny()
         .map(network -> Maybe.just(1)
-          .flatMap(v -> new SyncDockerExecutor<>(docker.removeNetworkCmd(network.getId()), docker.configuration() )
+          .flatMap(v -> new SyncDockerExecutor<>(client.removeNetworkCmd(network.getId()), client.configuration() )
             .withSuccessFormatter( (voi) -> format("Successfully removed network '%s' with id '%s' ", networkName, network.getId()) )
             .withErrorFormatter( (e) -> format("An occurred while removing network '%s' : '%s'", networkName, e.getMessage()) )
             .withBeforeExecute(beforeRemove)
@@ -101,7 +103,7 @@ class DockerSupport implements Docker {
   public Maybe<Container> startContainer(String containerName, String image, Consumer<CreateContainerCmd> beforeCreate, Consumer<String> afterCreate, Consumer<StartContainerCmd> beforeStart, Consumer<String> afterStart) {
     return fromFuture( supplyAsync( () -> {
         try{
-          return docker.listContainersCmd()
+          return client.listContainersCmd()
             .withShowAll(true)
             .exec()
             .stream()
@@ -114,12 +116,12 @@ class DockerSupport implements Docker {
               )
             )
             .orElseGet( () -> {
-              CreateContainerCmd command = docker.createContainerCmd(image)
+              CreateContainerCmd command = client.createContainerCmd(image)
                 .withName(containerName);
               beforeCreate.accept(command);
               String containerID = command.exec().getId();
               afterCreate.accept(containerID);
-              Container container = docker.listContainersCmd()
+              Container container = client.listContainersCmd()
                 .withShowAll(true)
                 .exec()
                 .stream()
@@ -137,7 +139,7 @@ class DockerSupport implements Docker {
       log.info(createContainerStatus.message());
       if(createContainerStatus.container() != null && !createContainerStatus.isStarted()){
         try{
-          StartContainerCmd command = docker.startContainerCmd(createContainerStatus.container().getId());
+          StartContainerCmd command = client.startContainerCmd(createContainerStatus.container().getId());
           beforeStart.accept(command);
           command.exec();
           log.info("Successfully started container '{}'", Arrays.toString(createContainerStatus.container().getNames()));
@@ -162,14 +164,14 @@ class DockerSupport implements Docker {
   public Maybe<Boolean> stopContainer(String containerName, Consumer<StopContainerCmd> beforeStop, Consumer<String> afterStop, Consumer<RemoveContainerCmd> beforeRemove, Consumer<String> afterRemove) {
     return fromFuture( supplyAsync( () -> {
         try{
-          return docker.listContainersCmd()
+          return client.listContainersCmd()
             .withShowAll(true)
             .exec()
             .stream()
             .findAny()
             .map(container -> {
               if (container.getStatus().contains("Up")) {
-                StopContainerCmd command = docker.stopContainerCmd(container.getId());
+                StopContainerCmd command = client.stopContainerCmd(container.getId());
                 beforeStop.accept(command);
                 command.exec();
                 log.info(format("Successfully stopped container '%s'.", containerName));
@@ -193,7 +195,7 @@ class DockerSupport implements Docker {
     ).flatMap(pair -> {
       if(pair.getKey() != null){
         try{
-          RemoveContainerCmd command = docker.removeContainerCmd(pair.getKey());
+          RemoveContainerCmd command = client.removeContainerCmd(pair.getKey());
           beforeRemove.accept(command);
           command.exec();
           log.info(format("Successfully removed container '%s'.", containerName));
@@ -215,7 +217,7 @@ class DockerSupport implements Docker {
     return findImageByTag(tag)
       .flatMap(image ->
         Maybe.fromFuture(CompletableFuture.supplyAsync(()->{
-          new SyncDockerExecutor<>(docker.removeImageCmd(image.getId()), docker.configuration() )
+          new SyncDockerExecutor<>(client.removeImageCmd(image.getId()), client.configuration() )
             .withSuccessFormatter( (v) -> format("Successfully removed image '%s'", tag) )
             .withErrorFormatter( (e) -> format("An occurred before removing image '%s' : '%s'", tag, e.getMessage()) )
             .withBeforeExecute(beforeRemove)
@@ -228,7 +230,7 @@ class DockerSupport implements Docker {
 
   public Maybe<String> buildImage(String tag, Consumer<BuildImageCmd> beforeCreate, Consumer<String> afterCreate){
     return just(1)
-      .flatMap(v -> (this.<BuildImageCmd, BuildResponseItem, BuildImageResultCallback, String>getAsyncExecutor(docker.buildImageCmd().withTag(tag), docker.configuration()))
+      .flatMap(v -> (this.<BuildImageCmd, BuildResponseItem, BuildImageResultCallback, String>getAsyncExecutor(client.buildImageCmd().withTag(tag), client.configuration()))
         .withErrorFormatter((e) -> format("An error occurred before creating image '%s' : '%s'", tag, e.getMessage()))
         .withSuccessFormatter((id) -> format("Successfully created image '%s'. Image ID: '%s'", tag, id))
         .withResultExtractor(BuildImageResultCallback::awaitImageId)
