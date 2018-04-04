@@ -13,7 +13,7 @@ public class DefaultPluginSetConfiguration<PLUGIN_CONFIG extends PluginConfigura
   private final Map<Class<? extends Plugin<PLUGIN_CONFIG>>, PLUGIN_CONFIG> delegate;
 
   @Override
-  public PLUGIN_CONFIG get(Class<? extends Plugin<PLUGIN_CONFIG>> pluginClass) {
+  public PLUGIN_CONFIG get(Class<? extends Plugin<? extends PLUGIN_CONFIG>> pluginClass) {
     return delegate.get(pluginClass);
   }
 

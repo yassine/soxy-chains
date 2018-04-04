@@ -28,29 +28,26 @@ public class ServicesModule extends AbstractModule{
                  "Plugin class has most likely been declared as type-erased.", clazz.getName()));
     Multibinder<ServicesPlugin> pluginMultibinder = Multibinder.newSetBinder(binder(), ServicesPlugin.class);
     pluginClasses.stream()
-      .filter(pluginClass -> resolveRawArguments(ServicesPlugin.class, pluginClass).length == 0)
+      .filter(pluginClass -> resolveRawArguments(ServicesPlugin.class, pluginClass).length == 1)
       .forEach(pluginClass -> pluginMultibinder.addBinding().to(pluginClass));
     pluginClasses.stream()
       .filter(pluginClass -> resolveRawArguments(ServicesPlugin.class, pluginClass).length == 1)
-      .map(configClass -> (Class) resolveRawArgument(ServicesPlugin.class, configClass))
-      .forEach(configClass -> {
-        PluginConfigProvider provider = new PluginConfigProvider(configClass);
+      .forEach(pluginClass -> {
+        PluginConfigProvider provider = new PluginConfigProvider(pluginClass);
         requestInjection(provider);
-        bind(configClass).toProvider(provider);
+        pluginMultibinder.addBinding().to(pluginClass);
+        bind((Class) resolveRawArgument(ServicesPlugin.class, pluginClass)).toProvider(provider);
       });
   }
 
   @RequiredArgsConstructor
-  public static class PluginConfigProvider<CONFIG > implements Provider<CONFIG> {
-    private final Class<? extends CONFIG> clazz;
+  public static class PluginConfigProvider<CONFIG extends ServicesPluginConfiguration> implements Provider<CONFIG> {
+    private final Class<? extends Plugin<? extends CONFIG>> clazz;
     @Inject
     private Provider<ServicesConfiguration> servicesConfiguration;
     @Override @SuppressWarnings("unchecked")
     public CONFIG get() {
-      return (CONFIG) servicesConfiguration.get().configurations().stream()
-        .filter(config -> clazz.equals(config.getClass()))
-        .findFirst()
-        .orElse(null);
+      return (CONFIG) servicesConfiguration.get().get(clazz);
     }
   }
 
