@@ -33,5 +33,4 @@ public interface Docker {
                                Consumer<String> afterStop,
                                Consumer<RemoveContainerCmd> beforeRemove,
                                Consumer<String> afterRemove);
-  SoxyChainsDockerClient client();
 }

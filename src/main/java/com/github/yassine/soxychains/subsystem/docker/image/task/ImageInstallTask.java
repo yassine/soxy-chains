@@ -8,8 +8,8 @@ import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration
 import com.github.yassine.soxychains.subsystem.docker.image.api.ImageRequirer;
 import com.github.yassine.soxychains.subsystem.docker.image.resolver.DockerImageResolver;
 import com.google.inject.Inject;
-import io.reactivex.Maybe;
 import io.reactivex.Observable;
+import io.reactivex.Single;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -25,7 +25,7 @@ import static com.github.yassine.soxychains.subsystem.docker.image.task.ImageTas
  */
 @RequiredArgsConstructor(onConstructor = @__(@Inject), access = AccessLevel.PUBLIC)
 @RunOn(Phase.INSTALL)
-public class InstallTask implements Task {
+public class ImageInstallTask implements Task {
 
   private final Set<ImageRequirer> imageRequirer;
   private final DockerImageResolver dockerImageResolver;
@@ -33,15 +33,15 @@ public class InstallTask implements Task {
   private final DockerConfiguration dockerConfiguration;
 
   @Override
-  public Maybe<Boolean> execute() {
+  public Single<Boolean> execute() {
     return Observable.fromIterable(dockerProvider.dockers())
             .flatMap(docker -> getNecessaryImages(imageRequirer)
-              .flatMapMaybe(image -> docker.buildImage(nameSpaceImage(dockerConfiguration, image.getName()), // TODO : template vars
-                                    imgCmd -> imgCmd.withTarInputStream(dockerImageResolver.resolve(image.getRoot(), null)),
-                                    imageID -> {}).map(StringUtils::isNoneEmpty)
+              .flatMapMaybe(image -> docker.buildImage(nameSpaceImage(dockerConfiguration, image.getName()),
+                                                       imgCmd -> imgCmd.withTarInputStream(dockerImageResolver.resolve(image.getRoot(), image.getTemplateVars())),
+                                                       imageID -> {})
+                                            .map(StringUtils::isNoneEmpty)
               .defaultIfEmpty(false)))
-            .reduce(true , (a,b) -> a || b)
-            .toMaybe();
+            .reduce(true , (a, b) -> a && b);
   }
 
 }

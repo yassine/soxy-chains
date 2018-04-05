@@ -7,9 +7,9 @@ import io.reactivex.Observable;
 import java.util.HashSet;
 import java.util.Set;
 
-public class ImageTaskUtils {
+class ImageTaskUtils {
 
-  public static Observable<DockerImage> getNecessaryImages(Set<ImageRequirer> imageRequirer) {
+  static Observable<DockerImage> getNecessaryImages(Set<ImageRequirer> imageRequirer) {
     return Observable.fromIterable(imageRequirer)
       .flatMap(ImageRequirer::require)
       .collectInto(new HashSet<DockerImage>(), HashSet::add).toObservable()

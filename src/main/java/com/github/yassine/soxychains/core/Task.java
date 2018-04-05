@@ -1,9 +1,9 @@
 package com.github.yassine.soxychains.core;
 
-import io.reactivex.Maybe;
+import io.reactivex.Single;
 
 public interface Task {
-  Maybe<Boolean> execute();
+  Single<Boolean> execute();
   default String name(){
     return getClass().getName();
   }

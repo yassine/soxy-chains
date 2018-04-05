@@ -10,7 +10,6 @@ import com.github.yassine.soxychains.subsystem.docker.config.DockerHostConfigura
 import com.google.common.base.Strings;
 import io.reactivex.Maybe;
 import io.reactivex.schedulers.Schedulers;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +29,6 @@ import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 @RequiredArgsConstructor @Slf4j @Accessors(fluent = true)
 class DockerSupport implements Docker {
-  @Getter
   private final SoxyChainsDockerClient client;
 
   @Override

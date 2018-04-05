@@ -13,7 +13,6 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.net.URI;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static com.github.yassine.soxychains.plugin.PluginUtils.configClassOf;
 

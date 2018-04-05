@@ -7,8 +7,8 @@ import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
 import com.github.yassine.soxychains.subsystem.docker.image.api.ImageRequirer;
 import com.google.inject.Inject;
-import io.reactivex.Maybe;
 import io.reactivex.Observable;
+import io.reactivex.Single;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
@@ -22,22 +22,21 @@ import static com.github.yassine.soxychains.subsystem.docker.image.task.ImageTas
  */
 @RequiredArgsConstructor(onConstructor = @__(@Inject), access = AccessLevel.PUBLIC)
 @RunOn(Phase.UNINSTALL)
-public class UninstallTask implements Task{
+public class ImageUninstallTask implements Task{
 
   private final Set<ImageRequirer> imageRequirer;
   private final DockerProvider dockerProvider;
   private final DockerConfiguration dockerConfiguration;
 
   @Override
-  public Maybe<Boolean> execute() {
+  public Single<Boolean> execute() {
     return Observable.fromIterable(dockerProvider.dockers())
       .flatMap(docker -> getNecessaryImages(imageRequirer)
-        .flatMapMaybe(image -> docker.removeImage(nameSpaceImage(dockerConfiguration, image.getName()), // TODO : template vars
+        .flatMapMaybe(image -> docker.removeImage(nameSpaceImage(dockerConfiguration, image.getName()),
                                                   imgCmd -> {},
                                                   imageID -> {})
           .defaultIfEmpty(false)))
-      .reduce(true , (a,b) -> a || b)
-      .toMaybe();
+      .reduce(true , (a,b) -> a && b);
   }
 
 }
