@@ -59,6 +59,14 @@ public class SoxyChainsModule extends AbstractModule {
       return mapper;
     }
 
+    @SuppressWarnings("unchecked")
+    @Provides @Singleton
+    ObjectMapper getDefaultConfigurationMapper(){
+      ObjectMapper mapper = new ObjectMapper();
+      mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
+      return mapper;
+    }
+
     @Provides @Singleton @SneakyThrows
     SoxyChainsConfiguration getConfiguration(@Configuration ObjectMapper mapper, @Configuration Validator validator){
       SoxyChainsConfiguration configuration = mapper.readValue(configStream, SoxyChainsConfiguration.class);
@@ -82,6 +90,6 @@ public class SoxyChainsModule extends AbstractModule {
   }
 
   @Retention(RetentionPolicy.RUNTIME) @BindingAnnotation
-  @interface Configuration{}
+  public @interface Configuration{}
 
 }

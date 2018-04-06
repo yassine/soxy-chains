@@ -211,6 +211,11 @@ class DockerSupport implements Docker {
   }
 
   @Override
+  public DockerHostConfiguration hostConfiguration() {
+    return client.configuration();
+  }
+
+  @Override
   public Maybe<Boolean> removeImage(String tag, Consumer<RemoveImageCmd> beforeRemove, Consumer<String> afterRemove) {
     return findImageByTag(tag)
       .flatMap(image ->

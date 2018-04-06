@@ -33,7 +33,7 @@ project {
     dependency 'com.google.guava:guava:21.0'
     dependency 'com.google.inject.extensions:guice-multibindings:4.1.0'
     dependency 'com.google.inject:guice:4.1.0'
-    dependency 'io.airlift:airline:0.7'
+    dependency 'io.airlift:airline:0.8'
     dependency 'io.github.lukehutch:fast-classpath-scanner:2.0.8'
     dependency 'io.reactivex.rxjava2:rxjava:2.1.0'
     dependency 'net.jodah:typetools:0.5.0'

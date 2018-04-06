@@ -17,15 +17,17 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static com.github.yassine.artifacts.guice.utils.GuiceUtils.loadSPIClasses;
 import static com.github.yassine.soxychains.plugin.PluginUtils.configKey;
 import static com.github.yassine.soxychains.plugin.PluginUtils.defaultConfig;
-import static com.google.common.collect.Streams.stream;
 import static com.machinezoo.noexception.Exceptions.sneak;
 import static net.jodah.typetools.TypeResolver.resolveRawArgument;
 import static net.jodah.typetools.TypeResolver.resolveRawArguments;
@@ -89,6 +91,11 @@ public class PluginsConfigDeserializer<CONFIG extends PluginSetConfiguration<?>>
       return namingStrategy.translate(name);
     }
     return name;
+  }
+
+  private <T> Stream<T> stream(Iterator<T> iterator){
+    Iterable<T> iterable = () -> iterator;
+    return StreamSupport.stream(iterable.spliterator(), false);
   }
 
 

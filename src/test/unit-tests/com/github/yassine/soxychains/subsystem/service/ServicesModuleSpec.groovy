@@ -1,6 +1,7 @@
 package com.github.yassine.soxychains.subsystem.service
 
 import com.github.yassine.soxychains.SoxyChainsModule
+import com.github.yassine.soxychains.plugin.PluginUtils
 import com.github.yassine.soxychains.subsystem.service.consul.ConsulConfiguration
 import com.github.yassine.soxychains.subsystem.service.consul.ConsulService
 import com.google.inject.Guice
@@ -33,7 +34,7 @@ class ServicesModuleSpec extends Specification {
     when:
     Injector injector = Guice.createInjector(new SoxyChainsModule(config))
     ConsulService consulService = injector.getInstance(ConsulService.class)
-    ConsulConfiguration configuration = consulService.configuration();
+    ConsulConfiguration configuration = injector.getInstance(PluginUtils.configClassOf(ConsulService.class));
     then:
     consulService != null
     configuration != null

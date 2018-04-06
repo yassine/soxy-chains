@@ -3,6 +3,7 @@ package com.github.yassine.soxychains.subsystem.docker.client;
 import com.github.dockerjava.api.command.*;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Image;
+import com.github.yassine.soxychains.subsystem.docker.config.DockerHostConfiguration;
 import io.reactivex.Maybe;
 
 import java.util.function.Consumer;
@@ -33,4 +34,5 @@ public interface Docker {
                                Consumer<String> afterStop,
                                Consumer<RemoveContainerCmd> beforeRemove,
                                Consumer<String> afterRemove);
+  DockerHostConfiguration hostConfiguration();
 }

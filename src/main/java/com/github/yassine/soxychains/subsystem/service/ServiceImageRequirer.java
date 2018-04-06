@@ -9,7 +9,6 @@ import com.google.inject.Injector;
 import io.reactivex.Observable;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.tuple.Pair;
 
 import java.net.URI;
 import java.util.Set;
@@ -29,10 +28,9 @@ public class ServiceImageRequirer implements ImageRequirer{
     return Observable.fromIterable(plugins)
       .map(ServicesPlugin::getClass)
       .filter(clazz -> clazz.isAnnotationPresent(RequiresImage.class))
-      .map(clazz -> Pair.of( clazz, clazz.getAnnotation(RequiresImage.class)))
-      .map(pair -> new DockerImage(
-        pair.getValue().name(),
-        URI.create(pair.getValue().resourceRoot()),
-        ImmutableMap.of("config", injector.getInstance(configClassOf((Class)pair.getKey())))));
+      .map(pluginClass -> new DockerImage(
+        pluginClass.getAnnotation(RequiresImage.class).name(),
+        URI.create(pluginClass.getAnnotation(RequiresImage.class).resourceRoot()),
+        ImmutableMap.of("config", injector.getInstance(configClassOf((Class) pluginClass)))));
   }
 }
