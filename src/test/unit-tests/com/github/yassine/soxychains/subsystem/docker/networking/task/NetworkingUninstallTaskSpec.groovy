@@ -4,6 +4,7 @@ import com.github.dockerjava.api.command.RemoveNetworkCmd
 import com.github.yassine.soxychains.subsystem.docker.client.Docker
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration
+import com.github.yassine.soxychains.subsystem.docker.networking.NetworkingConfiguration
 import io.reactivex.Maybe
 import spock.lang.Specification
 
@@ -13,7 +14,8 @@ class NetworkingUninstallTaskSpec extends Specification {
   Docker docker = Mock()
   DockerProvider dockerProvider = Mock()
   DockerConfiguration configuration = new DockerConfiguration()
-  NetworkingUninstallTask task = new NetworkingUninstallTask(dockerProvider, configuration)
+  NetworkingConfiguration networkingConfiguration = new NetworkingConfiguration()
+  NetworkingUninstallTask task = new NetworkingUninstallTask(dockerProvider, configuration, networkingConfiguration)
 
   void setup () {
     dockerProvider.dockers() >> [ docker ]

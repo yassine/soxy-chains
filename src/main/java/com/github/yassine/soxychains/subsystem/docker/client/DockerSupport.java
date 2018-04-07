@@ -6,8 +6,11 @@ import com.github.dockerjava.api.model.BuildResponseItem;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
+import com.github.yassine.soxychains.subsystem.docker.NamespaceUtils;
+import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerHostConfiguration;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
 import io.reactivex.Maybe;
 import io.reactivex.schedulers.Schedulers;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +33,7 @@ import static java.util.concurrent.CompletableFuture.supplyAsync;
 @RequiredArgsConstructor @Slf4j @Accessors(fluent = true)
 class DockerSupport implements Docker {
   private final SoxyChainsDockerClient client;
+  private final DockerConfiguration dockerConfiguration;
 
   @Override
   public Maybe<Image> findImageByTag(String imageTag) {
@@ -164,6 +168,12 @@ class DockerSupport implements Docker {
         try{
           return client.listContainersCmd()
             .withShowAll(true)
+            .withLabelFilter(
+              ImmutableMap.<String, String>builder()
+                .put(NamespaceUtils.SYSTEM_LABEL, "")
+                .put(NamespaceUtils.NAMESPACE_LABEL, dockerConfiguration.getNamespace())
+                .build()
+            )
             .exec()
             .stream()
             .findAny()

@@ -7,14 +7,14 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 
 import javax.validation.constraints.NotNull;
-
 import java.util.List;
 
 import static com.github.yassine.soxychains.subsystem.service.consul.ConsulConfiguration.ID;
 
-@Getter @ConfigKey(ID) @Accessors(fluent = true)
+@SuppressWarnings("FieldCanBeLocal")
+@ConfigKey(ID) @Accessors(fluent = true)
 public class ConsulConfiguration implements ServicesPluginConfiguration {
-  public static final String ID = "consul";
+  static final String ID = "consul";
   @NotNull
   private String image = ID;
   @NotNull @Getter

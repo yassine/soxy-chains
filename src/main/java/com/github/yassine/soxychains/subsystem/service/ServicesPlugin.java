@@ -1,7 +1,6 @@
 package com.github.yassine.soxychains.subsystem.service;
 
 import com.github.dockerjava.api.command.CreateContainerCmd;
-import com.github.dockerjava.api.model.Container;
 import com.github.yassine.soxychains.plugin.Plugin;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerHostConfiguration;
@@ -13,7 +12,6 @@ import java.util.stream.Stream;
 import static com.github.dockerjava.api.model.ExposedPort.tcp;
 import static com.github.dockerjava.api.model.ExposedPort.udp;
 import static com.github.dockerjava.api.model.PortBinding.parse;
-import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.nameSpaceNetwork;
 import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
 
@@ -23,7 +21,7 @@ import static java.util.Optional.ofNullable;
  * - Services typically run as container (not exclusively) on each host
  * - Services may declare dependencies through '@DependsOn' annotation from the 'guice-utils' module in order to require
  * another service to start before booting.
- * - Services requiring a custom docker image (one that needs to be build as part of the soxy-chains runtime) can use
+ * - Services requiring a custom docker image (one that needs to be built as part of the soxy-chains environment) can use
  * the '@RequiresImage' annotation
  *
  * (WIP: Spec may evolve yet)

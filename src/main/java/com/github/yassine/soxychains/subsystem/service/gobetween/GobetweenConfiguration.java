@@ -7,9 +7,7 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 
 import javax.validation.constraints.NotNull;
-
 import java.util.List;
-import java.util.Optional;
 
 import static com.github.yassine.soxychains.subsystem.service.gobetween.GobetweenConfiguration.ID;
 

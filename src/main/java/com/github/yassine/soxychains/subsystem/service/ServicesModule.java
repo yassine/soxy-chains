@@ -20,19 +20,17 @@ import static net.jodah.typetools.TypeResolver.resolveRawArguments;
 public class ServicesModule extends AbstractModule{
   @Override @SuppressWarnings("unchecked")
   protected void configure() {
+    Multibinder<ServicesPlugin> pluginMultibinder = Multibinder.newSetBinder(binder(), ServicesPlugin.class);
     Set<Class<? extends ServicesPlugin>> pluginClasses = GuiceUtils.loadSPIClasses(ServicesPlugin.class);
     pluginClasses.stream()
       .filter(clazz -> resolveRawArguments(ServicesPlugin.class, clazz).length == 0)
       .forEach(clazz ->
         log.warn("Plugin '{}' ignored,  couldn't detect/resolve its config class." +
-                 "Plugin class has most likely been declared as type-erased.", clazz.getName()));
-    Multibinder<ServicesPlugin> pluginMultibinder = Multibinder.newSetBinder(binder(), ServicesPlugin.class);
-    pluginClasses.stream()
-      .filter(pluginClass -> resolveRawArguments(ServicesPlugin.class, pluginClass).length == 1)
-      .forEach(pluginClass -> pluginMultibinder.addBinding().to(pluginClass));
+                 "Plugin class has most likely been declared without type parameters.", clazz.getName()));
     pluginClasses.stream()
       .filter(pluginClass -> resolveRawArguments(ServicesPlugin.class, pluginClass).length == 1)
       .forEach(pluginClass -> {
+        pluginMultibinder.addBinding().to(pluginClass);
         PluginConfigProvider provider = new PluginConfigProvider(pluginClass);
         requestInjection(provider);
         pluginMultibinder.addBinding().to(pluginClass);
@@ -52,7 +50,7 @@ public class ServicesModule extends AbstractModule{
   }
 
   @Provides @Singleton
-  ServicesConfiguration servicesConfiguration(SoxyChainsConfiguration soxyChainsConfiguration, Injector injector){
+  ServicesConfiguration servicesConfiguration(SoxyChainsConfiguration soxyChainsConfiguration){
     return Optional.ofNullable(soxyChainsConfiguration.getServices())
             .orElse(defaultServicesConfiguration());
   }
@@ -61,7 +59,7 @@ public class ServicesModule extends AbstractModule{
   static ServicesConfiguration defaultServicesConfiguration(){
     ImmutableMap.Builder<Class<? extends Plugin<ServicesPluginConfiguration>>, ServicesPluginConfiguration> builder = ImmutableMap.builder();
     GuiceUtils.loadSPIClasses(ServicesPlugin.class).stream()
-      .forEach(pluginClass -> builder.put((Class<? extends Plugin<ServicesPluginConfiguration>>) pluginClass, (ServicesPluginConfiguration) PluginUtils.defaultConfig(pluginClass)));
+      .forEach(pluginClass -> builder.put((Class<? extends Plugin<ServicesPluginConfiguration>>) pluginClass, PluginUtils.defaultConfig(pluginClass)));
     return new ServicesConfiguration(builder.build());
   }
 }

@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.github.yassine.artifacts.guice.scheduling.TaskSchedulerModule;
+import com.github.yassine.soxychains.core.CoreModule;
 import com.github.yassine.soxychains.core.PluginsConfigDeserializer;
 import com.github.yassine.soxychains.plugin.Plugin;
 import com.github.yassine.soxychains.subsystem.docker.DockerModule;
@@ -37,7 +39,8 @@ public class SoxyChainsModule extends AbstractModule {
     install(new ConfigurationModule(configStream));
     install(new DockerModule());
     install(new ServicesModule());
-    requestStaticInjection(PluginsConfigDeserializer.class);
+    install(new CoreModule());
+    install(new TaskSchedulerModule());
   }
 
   @RequiredArgsConstructor
@@ -90,6 +93,6 @@ public class SoxyChainsModule extends AbstractModule {
   }
 
   @Retention(RetentionPolicy.RUNTIME) @BindingAnnotation
-  public @interface Configuration{}
+  @interface Configuration{}
 
 }

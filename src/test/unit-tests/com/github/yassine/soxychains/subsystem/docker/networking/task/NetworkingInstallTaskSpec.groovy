@@ -4,6 +4,7 @@ import com.github.dockerjava.api.command.CreateNetworkCmd
 import com.github.yassine.soxychains.subsystem.docker.client.Docker
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration
+import com.github.yassine.soxychains.subsystem.docker.networking.NetworkingConfiguration
 import io.reactivex.Maybe
 import spock.lang.Specification
 
@@ -14,7 +15,8 @@ class NetworkingInstallTaskSpec extends Specification {
   Docker docker = Mock()
   DockerProvider dockerProvider = Mock()
   DockerConfiguration configuration = new DockerConfiguration()
-  NetworkingInstallTask task = new NetworkingInstallTask(dockerProvider, configuration)
+  NetworkingConfiguration networkingConfiguration = new NetworkingConfiguration()
+  NetworkingInstallTask task = new NetworkingInstallTask(dockerProvider, configuration, networkingConfiguration)
 
   void setup () {
     dockerProvider.dockers() >> [ docker ]

@@ -8,6 +8,7 @@ import com.github.yassine.soxychains.subsystem.docker.NamespaceUtils;
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
 import com.github.yassine.soxychains.subsystem.docker.networking.NetworkingConfiguration;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import io.reactivex.Single;
@@ -23,6 +24,7 @@ import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.name
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.nameSpaceNetwork;
 import static io.reactivex.Observable.fromFuture;
 import static io.reactivex.Observable.fromIterable;
+import static java.util.Optional.ofNullable;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 @Slf4j
@@ -41,30 +43,41 @@ public class ServicesStartTask implements Task{
   public Single<Boolean> execute() {
     // actions to come are executed on each host in parallel
     return fromIterable(dockerProvider.dockers())
-      //Knowing that a service may require other ones to start before actually starting, services will be started
-      //in parallel as a set of waves of startup tasks that can start in parallel.
+      //Knowing that a service may require other ones to start before starting, services will be started
+      //in parallel as a waves of startup tasks that can be executed in parallel.
       .flatMap(docker -> fromIterable(taskScheduler.scheduleInstances(services))
-          //for each wave of services/services
+          //for each wave of services
           .flatMap(services -> fromFuture(supplyAsync(() -> fromIterable(services)
+              //for each service
               .flatMapMaybe(service ->
                 //create & start the container that relates to the given service
                 docker.startContainer(configOf(service).serviceName(), configOf(service).imageName(),
+                  // The pre-create container hook is used to allow services configuring the container before its creation
                   (createContainer) -> {
                     service.configureContainer(createContainer, configOf(service), dockerConfiguration);
                     createContainer.withNetworkMode(nameSpaceNetwork(dockerConfiguration, networkingConfiguration.getNetworkName()));
                     createContainer.withName(nameSpaceContainer(dockerConfiguration, configOf(service).serviceName()));
+                    createContainer.withLabels(
+                      ImmutableMap.<String, String>builder()
+                        .putAll(ofNullable(createContainer.getLabels()).orElse(ImmutableMap.of()))
+                        .put(NamespaceUtils.ORIGINAL_LABEL, configOf(service).serviceName())
+                        .put(NamespaceUtils.SYSTEM_LABEL, "")
+                        .put(NamespaceUtils.NAMESPACE_LABEL, dockerConfiguration.getNamespace())
+                        .build()
+                    );
                   },
+                  //The post-create hook is not used
                   (containerID) -> {},
+                  //The pre-start hook is not used
                   (startContainer) -> {},
-                  (container) -> {
-                    service.isReady(docker.hostConfiguration(), configOf(service)).blockingGet();
-                  }
+                  //The post-start hook is used
+                  (container) -> {}
                 ).subscribeOn(Schedulers.io()).map(result -> service)
               )
               // wait for programmatic startup check
               .flatMapSingle(service -> (Single<Boolean>) service.isReady(docker.hostConfiguration(), configOf(service)))
               // reduce the results as a single boolean value
-              .defaultIfEmpty(false).reduce(true, (a,b) -> a && b).blockingGet())
+              .defaultIfEmpty(false).reduce(true, (a, b) -> a && b).blockingGet())
             )
           )
       ).subscribeOn(Schedulers.io()).reduce(true, (a,b) -> a && b);

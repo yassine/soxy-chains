@@ -21,7 +21,7 @@ public class DockerProviderSupport implements DockerProvider {
 
   private final DockerConfiguration dockerConfiguration;
 
-  private static final LoadingCache<DockerHostConfiguration, SoxyChainsDockerClient> CLIENT_CACHE = CacheBuilder.newBuilder().build(new CacheLoader<DockerHostConfiguration, SoxyChainsDockerClient>() {
+  private final LoadingCache<DockerHostConfiguration, SoxyChainsDockerClient> CLIENT_CACHE = CacheBuilder.newBuilder().build(new CacheLoader<DockerHostConfiguration, SoxyChainsDockerClient>() {
     @Override @SuppressWarnings("NullableProblems")
     public SoxyChainsDockerClient load(DockerHostConfiguration hostConfiguration){
       DefaultDockerClientConfig.Builder configBuilder = new DefaultDockerClientConfig.Builder();
@@ -34,10 +34,10 @@ public class DockerProviderSupport implements DockerProvider {
     }
   });
 
-  private static final LoadingCache<DockerHostConfiguration, Docker> HELPER_CACHE = CacheBuilder.newBuilder().build(new CacheLoader<DockerHostConfiguration, Docker>() {
+  private final LoadingCache<DockerHostConfiguration, Docker> HELPER_CACHE = CacheBuilder.newBuilder().build(new CacheLoader<DockerHostConfiguration, Docker>() {
     @Override @SuppressWarnings("unchecked")
     public Docker load(DockerHostConfiguration key) throws Exception {
-      return new DockerSupport(CLIENT_CACHE.get(key));
+      return new DockerSupport(CLIENT_CACHE.get(key), dockerConfiguration);
     }
   });
 

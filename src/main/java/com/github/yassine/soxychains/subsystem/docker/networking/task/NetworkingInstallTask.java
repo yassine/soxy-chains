@@ -7,6 +7,7 @@ import com.github.yassine.soxychains.core.Task;
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
 import com.github.yassine.soxychains.subsystem.docker.image.task.ImageInstallTask;
+import com.github.yassine.soxychains.subsystem.docker.networking.NetworkingConfiguration;
 import com.google.inject.Inject;
 import io.reactivex.Observable;
 import io.reactivex.Single;
@@ -22,12 +23,15 @@ import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.name
 public class NetworkingInstallTask implements Task{
   private final DockerProvider dockerProvider;
   private final DockerConfiguration dockerConfiguration;
-  final static String NETWORK_NAME = "soxy-network";
+  private final NetworkingConfiguration networkingConfiguration;
   @Override
   public Single<Boolean> execute() {
     return Observable.fromIterable(dockerProvider.dockers())
-            .flatMapMaybe(docker -> docker.createNetwork(nameSpaceNetwork(dockerConfiguration, NETWORK_NAME), createNetworkCmd -> {}, (name) -> {})
-                                      .map(StringUtils::isNotEmpty).defaultIfEmpty(false))
+            .flatMapMaybe(docker -> docker.createNetwork(
+                                        nameSpaceNetwork(dockerConfiguration, networkingConfiguration.getNetworkName()),
+                                        createNetworkCmd -> {},
+                                        name -> {}
+                                      ).map(StringUtils::isNotEmpty).defaultIfEmpty(false))
             .reduce(true, (a, b) -> a && b);
   }
 }

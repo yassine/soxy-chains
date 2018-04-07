@@ -12,6 +12,7 @@ public class NamespaceUtils {
   private static final String NETWORK_SEPARATOR   = "__";
   public static final String SYSTEM_LABEL         = SoxyChainsModule.class.getPackage().getName();
   public static final String ORIGINAL_LABEL       = SYSTEM_LABEL+".original_name";
+  public static final String NAMESPACE_LABEL      = SYSTEM_LABEL+".namespace";
   public static final String REPLICA_LABEL        = SYSTEM_LABEL+".replica_num";
 
   public static String nameSpaceImage(DockerConfiguration configuration, String userImageName){

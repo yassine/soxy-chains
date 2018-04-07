@@ -1,7 +1,6 @@
 package com.github.yassine.soxychains.cli.host;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.yassine.soxychains.SoxyChainsModule;
 import com.github.yassine.soxychains.cli.ConfigurableCommand;
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
 import com.google.inject.Inject;
@@ -63,8 +62,8 @@ public class Status extends ConfigurableCommand{
     if(outputPath != null){
       File outputFile =(new File(outputPath));
       if(outputFile.exists() && outputFile.isDirectory()){
-        System.out.println(String.format("Output file '%s' is a directory", outputPath));
-        System.exit(1);
+        log.warn("Output file {} is a directory. Using stdout instead as output", outputPath);
+        outputPath = null;
       }
     }
   }

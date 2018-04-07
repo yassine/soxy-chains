@@ -28,7 +28,7 @@ class DockerSupportSpec extends Specification {
     List<Image> images = Arrays.asList(targetImage)
     listImagesCmd.exec() >> images
     docker.listImagesCmd() >> listImagesCmd
-    DockerSupport dockerHelperSupport = new DockerSupport(docker)
+    DockerSupport dockerHelperSupport = new DockerSupport(docker, dockerSubsystemConfiguration)
 
     expect:
     !dockerHelperSupport.findImageByTag("my-image").isEmpty().blockingGet()
@@ -44,7 +44,7 @@ class DockerSupportSpec extends Specification {
     List<Image> images = Arrays.asList(targetImage)
     listImagesCmd.exec() >> images
     docker.listImagesCmd() >> listImagesCmd
-    DockerSupport dockerHelperSupport = new DockerSupport(docker)
+    DockerSupport dockerHelperSupport = new DockerSupport(docker, dockerSubsystemConfiguration)
 
     when:
     def absent = dockerHelperSupport.findImageByTag("my-image").isEmpty().blockingGet()
@@ -76,7 +76,7 @@ class DockerSupportSpec extends Specification {
     docker.listNetworksCmd()  >> listNetworksCmd
 
     when:
-    DockerSupport dockerHelperSupport = new DockerSupport(docker)
+    DockerSupport dockerHelperSupport = new DockerSupport(docker, dockerSubsystemConfiguration)
     dockerHelperSupport.createNetwork("my-network", {test -> callTrace.add(1)}, {test -> callTrace.add(3)}).blockingGet()
 
     then:
@@ -111,7 +111,7 @@ class DockerSupportSpec extends Specification {
     ArrayList<Integer> callTrace = new ArrayList<>()
 
     when:
-    DockerSupport dockerHelperSupport = new DockerSupport(docker)
+    DockerSupport dockerHelperSupport = new DockerSupport(docker, dockerSubsystemConfiguration)
     dockerHelperSupport.createNetwork("my-network", {test -> callTrace.add(1)}, {test -> callTrace.add(2)}).blockingGet()
 
     then:
@@ -145,7 +145,7 @@ class DockerSupportSpec extends Specification {
     listNetworksCmd.exec() >> networks
 
     when:
-    DockerSupport dockerHelperSupport = new DockerSupport(docker)
+    DockerSupport dockerHelperSupport = new DockerSupport(docker, dockerSubsystemConfiguration)
     dockerHelperSupport.removeNetwork("my-network", {test -> callTrace.add(1)}, {test -> callTrace.add(3)}).blockingGet()
 
     then:
@@ -174,7 +174,7 @@ class DockerSupportSpec extends Specification {
     ArrayList<Integer> callTrace = new ArrayList<>()
 
     when:
-    DockerSupport dockerHelperSupport = new DockerSupport(docker)
+    DockerSupport dockerHelperSupport = new DockerSupport(docker, dockerSubsystemConfiguration)
     dockerHelperSupport.removeNetwork("my-network", {test -> callTrace.add(1)}, {test -> callTrace.add(2)}).blockingGet()
 
     then:
@@ -218,10 +218,11 @@ class DockerSupportSpec extends Specification {
     listContainersCmd.withLabelFilter(_ as String) >> listContainersCmd
     listContainersCmd.withLabelFilter(_ as String[]) >> listContainersCmd
     listContainersCmd.withShowAll(_ as Boolean) >> listContainersCmd
+    listContainersCmd.withLabelFilter(_ as Map<String, String>) >> listContainersCmd
     listContainersCmd.exec()    >> containers
 
     when:
-    DockerSupport dockerHelperSupport = new DockerSupport(docker)
+    DockerSupport dockerHelperSupport = new DockerSupport(docker, dockerSubsystemConfiguration)
     dockerHelperSupport.startContainer("my-container", "my-image", {test -> callTrace.add(1)}, {test -> callTrace.add(3)}, {test -> callTrace.add(4)}, {test -> callTrace.add(6)}).blockingGet()
 
     then:
@@ -265,10 +266,11 @@ class DockerSupportSpec extends Specification {
     listContainersCmd.withLabelFilter(_ as String) >> listContainersCmd
     listContainersCmd.withLabelFilter(_ as String[]) >> listContainersCmd
     listContainersCmd.withShowAll(_ as Boolean) >> listContainersCmd
+    listContainersCmd.withLabelFilter(_ as Map<String, String>) >> listContainersCmd
     listContainersCmd.exec()    >> containers
 
     when:
-    DockerSupport dockerHelperSupport = new DockerSupport(docker)
+    DockerSupport dockerHelperSupport = new DockerSupport(docker, dockerSubsystemConfiguration)
     dockerHelperSupport.startContainer("my-container", "my-image", {test -> callTrace.add(1)}, {test -> callTrace.add(3)}, {test -> callTrace.add(4)}, {test -> callTrace.add(6)}).blockingGet()
 
     then:
@@ -310,10 +312,11 @@ class DockerSupportSpec extends Specification {
     listContainersCmd.withLabelFilter(_ as String) >> listContainersCmd
     listContainersCmd.withShowAll(_ as Boolean) >> listContainersCmd
     listContainersCmd.withLabelFilter(_ as String[]) >> listContainersCmd
+    listContainersCmd.withLabelFilter(_ as Map<String, String>) >> listContainersCmd
     listContainersCmd.exec()    >> containers
 
     when:
-    DockerSupport dockerHelperSupport = new DockerSupport(docker)
+    DockerSupport dockerHelperSupport = new DockerSupport(docker, dockerSubsystemConfiguration)
     dockerHelperSupport.startContainer("my-container", "my-image", {test -> callTrace.add(1)}, {test -> callTrace.add(2)}, {test -> callTrace.add(3)}, {test -> callTrace.add(4)}).blockingGet()
 
     then:
@@ -341,10 +344,11 @@ class DockerSupportSpec extends Specification {
     listContainersCmd.withLabelFilter(_ as String) >> listContainersCmd
     listContainersCmd.withShowAll(_ as Boolean) >> listContainersCmd
     listContainersCmd.withLabelFilter(_ as String[]) >> listContainersCmd
+    listContainersCmd.withLabelFilter(_ as Map<String, String>) >> listContainersCmd
     listContainersCmd.exec()    >> []
 
     when:
-    DockerSupport dockerHelperSupport = new DockerSupport(docker)
+    DockerSupport dockerHelperSupport = new DockerSupport(docker, dockerSubsystemConfiguration)
     boolean created = dockerHelperSupport.startContainer("my-container", "my-image", {test -> callTrace.add(1)}, {test -> callTrace.add(2)}, {test -> callTrace.add(3)}, {test -> callTrace.add(4)}).blockingGet()
 
     then:
@@ -353,8 +357,6 @@ class DockerSupportSpec extends Specification {
 
   def "StartContainer : it should return false if the container fails to start" () {
     given:
-    AtomicInteger createContainerCounter = new AtomicInteger(0)
-    AtomicInteger startContainerCounter  = new AtomicInteger(0)
     List<Container> containers = new ArrayList<>()
     CreateContainerResponse createContainerResponse = Mock()
     SoxyChainsDockerClient docker         = Mock()
@@ -383,10 +385,11 @@ class DockerSupportSpec extends Specification {
     listContainersCmd.withLabelFilter(_ as String) >> listContainersCmd
     listContainersCmd.withLabelFilter(_ as String[]) >> listContainersCmd
     listContainersCmd.withShowAll(_ as Boolean) >> listContainersCmd
+    listContainersCmd.withLabelFilter(_ as Map<String, String>) >> listContainersCmd
     listContainersCmd.exec()    >> containers
 
     when:
-    DockerSupport dockerHelperSupport = new DockerSupport(docker)
+    DockerSupport dockerHelperSupport = new DockerSupport(docker, dockerSubsystemConfiguration)
     boolean started = dockerHelperSupport.startContainer("my-container", "my-image", {test -> callTrace.add(1)}, {test -> callTrace.add(2)}, {test -> callTrace.add(3)}, {test -> callTrace.add(4)}).blockingGet()
 
     then:
@@ -425,10 +428,11 @@ class DockerSupportSpec extends Specification {
     listContainersCmd.withLabelFilter(_ as String) >> listContainersCmd
     listContainersCmd.withShowAll(_ as Boolean) >> listContainersCmd
     listContainersCmd.withLabelFilter(_ as String[]) >> listContainersCmd
+    listContainersCmd.withLabelFilter(_ as Map<String, String>) >> listContainersCmd
     listContainersCmd.exec()    >> containers
 
     when:
-    DockerSupport dockerHelperSupport = new DockerSupport(docker)
+    DockerSupport dockerHelperSupport = new DockerSupport(docker, dockerSubsystemConfiguration)
     dockerHelperSupport.stopContainer("my-container", {test -> callTrace.add(1)}, {test -> callTrace.add(3)}, {test -> callTrace.add(4)}, {test -> callTrace.add(6)}).blockingGet()
 
     then:
@@ -469,10 +473,11 @@ class DockerSupportSpec extends Specification {
     listContainersCmd.withLabelFilter(_ as String) >> listContainersCmd
     listContainersCmd.withShowAll(_ as Boolean) >> listContainersCmd
     listContainersCmd.withLabelFilter(_ as String[]) >> listContainersCmd
+    listContainersCmd.withLabelFilter(_ as Map<String, String>) >> listContainersCmd
     listContainersCmd.exec()    >> containers
 
     when:
-    DockerSupport dockerHelperSupport = new DockerSupport(docker)
+    DockerSupport dockerHelperSupport = new DockerSupport(docker, dockerSubsystemConfiguration)
     dockerHelperSupport.stopContainer("my-container", {test -> callTrace.add(1)}, {test -> callTrace.add(3)}, {test -> callTrace.add(4)}, {test -> callTrace.add(6)}).blockingGet()
 
     then:
@@ -506,11 +511,12 @@ class DockerSupportSpec extends Specification {
     listContainersCmd.withLabelFilter(_ as String) >> listContainersCmd
     listContainersCmd.withLabelFilter(_ as String[]) >> listContainersCmd
     listContainersCmd.withShowAll(_ as Boolean) >> listContainersCmd
+    listContainersCmd.withLabelFilter(_ as Map<String, String>) >> listContainersCmd
     listContainersCmd.exec()    >> containers
     ArrayList<Integer> callTrace = new ArrayList<>()
 
     when:
-    DockerSupport dockerHelperSupport = new DockerSupport(docker)
+    DockerSupport dockerHelperSupport = new DockerSupport(docker, dockerSubsystemConfiguration)
     dockerHelperSupport.stopContainer("my-container", {test -> callTrace.add(1)}, {test -> callTrace.add(2)}, {test -> callTrace.add(3)}, {test -> callTrace.add(4)}).blockingGet()
 
     then:
@@ -542,10 +548,11 @@ class DockerSupportSpec extends Specification {
     listContainersCmd.withLabelFilter(_ as String) >> listContainersCmd
     listContainersCmd.withShowAll(_ as Boolean) >> listContainersCmd
     listContainersCmd.withLabelFilter(_ as String[]) >> listContainersCmd
+    listContainersCmd.withLabelFilter(_ as Map<String, String>) >> listContainersCmd
     listContainersCmd.exec()    >> containers
 
     when:
-    DockerSupport dockerHelperSupport = new DockerSupport(docker)
+    DockerSupport dockerHelperSupport = new DockerSupport(docker, dockerSubsystemConfiguration)
     boolean stopped = dockerHelperSupport.stopContainer("my-container", {test -> callTrace.add(1)}, {test -> callTrace.add(3)}, {test -> callTrace.add(4)}, {test -> callTrace.add(6)}).blockingGet()
 
     then:
@@ -578,10 +585,11 @@ class DockerSupportSpec extends Specification {
     listContainersCmd.withLabelFilter(_ as String) >> listContainersCmd
     listContainersCmd.withShowAll(_ as Boolean) >> listContainersCmd
     listContainersCmd.withLabelFilter(_ as String[]) >> listContainersCmd
+    listContainersCmd.withLabelFilter(_ as Map<String, String>) >> listContainersCmd
     listContainersCmd.exec()    >> containers
 
     when:
-    DockerSupport dockerHelperSupport = new DockerSupport(docker)
+    DockerSupport dockerHelperSupport = new DockerSupport(docker, dockerSubsystemConfiguration)
     boolean removed = dockerHelperSupport.stopContainer("my-container", {test -> callTrace.add(1)}, {test -> callTrace.add(3)}, {test -> callTrace.add(4)}, {test -> callTrace.add(6)}).blockingGet()
 
     then:
@@ -611,7 +619,7 @@ class DockerSupportSpec extends Specification {
     docker.listImagesCmd() >> listImagesCmd
     docker.removeImageCmd(_ as String) >> removeImageCmd
     docker.configuration() >> hostConfiguration
-    DockerSupport dockerHelperSupport = new DockerSupport(docker)
+    DockerSupport dockerHelperSupport = new DockerSupport(docker, dockerSubsystemConfiguration)
 
     when:
     def result = dockerHelperSupport.removeImage("my-image",
@@ -641,7 +649,7 @@ class DockerSupportSpec extends Specification {
       docker.listImagesCmd() >> listImagesCmd
       docker.removeImageCmd(_ as String) >> removeImageCmd
       docker.configuration() >> hostConfiguration
-      DockerSupport dockerHelperSupport = new DockerSupport(docker)
+      DockerSupport dockerHelperSupport = new DockerSupport(docker, dockerSubsystemConfiguration)
       ArrayList<Integer> callTrace = new ArrayList<>()
 
     when:
