@@ -1,20 +1,34 @@
-FROM frolvlad/alpine-glibc
+FROM alpine:edge
+MAINTAINER Yassine Echabbi <github.com/yassine>
 
-RUN apk upgrade --update
+ENV GOPATH /go-workspace
+ENV GOBETWEEN_VERSION 0.5.0
+ENV PATH $GOPATH/bin:$PATH
 
-RUN apk add --no-cache curl supervisor && \
-    curl -jksSL -o /tmp/gobetween.tar.gz https://github.com/yyyar/gobetween/releases/download/0.5.0/gobetween_0.5.0_linux_amd64.tar.gz && \
-    gunzip /tmp/gobetween.tar.gz && \
-    tar -C /etc -xf /tmp/gobetween.tar && \
-    mv /etc/gobetween /etc/gobetween && \
-    rm -rf /tmp/gobetween* && \
-    ln -s /etc/gobetween /usr/bin/gobetween && \
-    mkdir -p /data/config/gobetween && \
-    apk del curl
+ADD ./config /etc/config/
 
-ADD ./config /etc/config
-
-RUN mkdir -p /var/log/supervisor
+RUN apk update \
+    && apk upgrade \
+    # Permanent Deps
+    && apk add --no-cache supervisor \
+    # Build Deps
+    && apk add --no-cache --virtual .build-deps \
+        make \
+       	"go=1.10.1-r0" \
+        git \
+        gcc \
+        libc-dev \
+        libgcc \
+    && mkdir -p $GOPATH/src/github.com/yyyar $GOPATH/bin \
+    && cd $GOPATH/src/github.com/yyyar \
+    && git clone --branch $GOBETWEEN_VERSION https://github.com/yyyar/gobetween.git \
+    && cd gobetween
+    && make deps \
+    && make build-static \
+    && cp bin/gobetween /bin/gobetween \
+    && apk del .build-deps \
+    && rm -rf $GOPATH /var/cache/apk/* \
+    && mkdir -p /var/log/supervisor
 
 ENTRYPOINT ["supervisord"]
 CMD ["--nodaemon", "--configuration", "/etc/config/supervisord/supervisord.conf"]
