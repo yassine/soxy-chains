@@ -9,7 +9,7 @@
     <Logger name="org.apache.camel" level="info" additivity="false">
       <AppenderRef ref="COLORFUL"/>
     </Logger>
-    <Logger name="com.github.dockerjava" level="debug" additivity="false">
+    <Logger name="com.github.dockerjava" level="info" additivity="false">
       <AppenderRef ref="COLORFUL"/>
     </Logger>
     <Root level="INFO">

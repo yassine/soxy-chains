@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.yassine.soxychains.SoxyChainsApplication
 import com.github.yassine.soxychains.SoxyChainsConfiguration
 import com.github.yassine.soxychains.TestUtils
+import com.github.yassine.soxychains.subsystem.service.consul.ConsulConfiguration
+import com.github.yassine.soxychains.subsystem.service.dns.DnsConfiguration
+import com.github.yassine.soxychains.subsystem.service.gobetween.GobetweenConfiguration
 import com.google.common.io.Files
 import org.apache.commons.io.IOUtils
 import org.junit.Ignore
@@ -35,13 +38,13 @@ class InstallCommandSpec extends Specification {
 
     expect:
     dockerClient.listImagesCmd().exec().stream().anyMatch{ image ->
-      stream(image.getRepoTags()).anyMatch{tag -> tag.contains(nameSpaceImage(configuration.getDocker(), "consul"))}
+      stream(image.getRepoTags()).anyMatch{tag -> tag.contains(nameSpaceImage(configuration.getDocker(), ConsulConfiguration.ID))}
     }
     dockerClient.listImagesCmd().exec().stream().anyMatch{ image ->
-      stream(image.getRepoTags()).anyMatch{tag -> tag.contains(nameSpaceImage(configuration.getDocker(), "gobetween"))}
+      stream(image.getRepoTags()).anyMatch{tag -> tag.contains(nameSpaceImage(configuration.getDocker(), GobetweenConfiguration.ID))}
     }
     dockerClient.listImagesCmd().exec().stream().anyMatch{ image ->
-      stream(image.getRepoTags()).anyMatch{tag -> tag.contains(nameSpaceImage(configuration.getDocker(), "dns_server"))}
+      stream(image.getRepoTags()).anyMatch{tag -> tag.contains(nameSpaceImage(configuration.getDocker(), DnsConfiguration.ID))}
     }
     dockerClient.listNetworksCmd().exec().stream().anyMatch{ network ->
       (nameSpaceNetwork(configuration.getDocker(), configuration.getDocker().getNetworkingConfiguration().getNetworkName()) == network.getName())
