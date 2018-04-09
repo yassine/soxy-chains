@@ -15,7 +15,7 @@ import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.name
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.nameSpaceNetwork
 import static java.util.Arrays.stream
 
-//@Stepwise
+@Stepwise
 class InstallCommandSpec extends Specification {
 
   @Shared
@@ -23,7 +23,6 @@ class InstallCommandSpec extends Specification {
   @Shared
   private SoxyChainsConfiguration configuration
 
-  @Ignore
   def "it should create docker images for required services"() {
     setup:
     File workDir = Files.createTempDir()
