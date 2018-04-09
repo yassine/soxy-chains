@@ -1,4 +1,4 @@
-FROM yassine/alpine-gobetween:0.5.0
+FROM yassine/alpine-gobetween
 
 ADD ./config /etc/config/
 

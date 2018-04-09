@@ -1,1 +1,1 @@
-FROM yassine/soxy-driver:latest
+FROM yassine/soxy-driver
