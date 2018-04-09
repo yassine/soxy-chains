@@ -7,7 +7,7 @@ import com.google.auto.service.AutoService;
 
 import static com.github.yassine.soxychains.subsystem.service.dns.DnsConfiguration.ID;
 
-@RequiresImage(name = ID, resourceRoot = "classpath://com/github/yassine/soxychains/subsystem/service/"+ ID)
+@RequiresImage(name = ID, resourceRoot = "classpath://com/github/yassine/soxychains/subsystem/service/"+DnsConfiguration.ID)
 @AutoService(ServicesPlugin.class) @ConfigKey(ID)
 public class DnsService implements ServicesPlugin<DnsConfiguration> {
 }

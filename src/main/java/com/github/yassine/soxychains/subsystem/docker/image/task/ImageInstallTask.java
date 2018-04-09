@@ -7,6 +7,7 @@ import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
 import com.github.yassine.soxychains.subsystem.docker.image.api.ImageRequirer;
 import com.github.yassine.soxychains.subsystem.docker.image.resolver.DockerImageResolver;
+import com.google.auto.service.AutoService;
 import com.google.inject.Inject;
 import io.reactivex.Single;
 import io.reactivex.schedulers.Schedulers;
@@ -25,7 +26,7 @@ import static io.reactivex.Observable.fromIterable;
  * are available in the hosts of the cluster.
  */
 @RequiredArgsConstructor(onConstructor = @__(@Inject), access = AccessLevel.PUBLIC)
-@RunOn(Phase.INSTALL)
+@RunOn(Phase.INSTALL) @AutoService(Task.class)
 public class ImageInstallTask implements Task {
 
   private final Set<ImageRequirer> imageRequirer;
@@ -39,7 +40,7 @@ public class ImageInstallTask implements Task {
             .flatMap(docker -> getNecessaryImages(imageRequirer)
               .flatMapMaybe(image -> docker.buildImage(nameSpaceImage(dockerConfiguration, image.getName()),
                                                        imgCmd -> imgCmd.withTarInputStream(dockerImageResolver.resolve(image.getRoot(), image.getTemplateVars())).withForcerm(true),
-                                                       imageID -> {}).subscribeOn(Schedulers.io())
+                                                       imageID -> {})
                                             .map(StringUtils::isNoneEmpty)
               .defaultIfEmpty(false)).subscribeOn(Schedulers.io()))
             .reduce(true , (a, b) -> a && b);

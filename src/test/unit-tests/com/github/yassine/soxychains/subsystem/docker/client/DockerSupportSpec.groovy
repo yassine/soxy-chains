@@ -633,7 +633,7 @@ class DockerSupportSpec extends Specification {
     result
   }
 
-  def "RemoveImage   : When the image does not exist the result shall be false"() {
+  def "RemoveImage : When the image does not exist the result shall be true"() {
     given:
       SoxyChainsDockerClient docker = Mock()
       ListImagesCmd listImagesCmd = Mock()
@@ -662,7 +662,7 @@ class DockerSupportSpec extends Specification {
     then:
       callTrace == []
       removeImageCounter.get() == 0
-      !result
+      result
   }
 
 }

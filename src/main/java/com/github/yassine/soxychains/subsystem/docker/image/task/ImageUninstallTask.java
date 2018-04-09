@@ -6,6 +6,7 @@ import com.github.yassine.soxychains.core.Task;
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
 import com.github.yassine.soxychains.subsystem.docker.image.api.ImageRequirer;
+import com.google.auto.service.AutoService;
 import com.google.inject.Inject;
 import io.reactivex.Observable;
 import io.reactivex.Single;
@@ -21,7 +22,7 @@ import static com.github.yassine.soxychains.subsystem.docker.image.task.ImageTas
  *
  */
 @RequiredArgsConstructor(onConstructor = @__(@Inject), access = AccessLevel.PUBLIC)
-@RunOn(Phase.UNINSTALL)
+@RunOn(Phase.UNINSTALL) @AutoService(Task.class)
 public class ImageUninstallTask implements Task{
 
   private final Set<ImageRequirer> imageRequirer;

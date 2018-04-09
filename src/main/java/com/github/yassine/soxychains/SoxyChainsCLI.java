@@ -88,10 +88,14 @@ public class SoxyChainsCLI {
           Package p = packageIndex.get(key);
           if(p != null){
             CommandGroup g = p.getAnnotation(CommandGroup.class);
-            cliBuilder.withGroup(g.name())
-              .withDescription(g.description())
-              .withDefaultCommand(g.defaultCommand())
-              .withCommands(commandIndex.get(key));
+            if(g.name().equals("default")){
+              cliBuilder.withCommands((Iterable) commandIndex.get(key));
+            }else{
+              cliBuilder.withGroup(g.name())
+                .withDescription(g.description())
+                .withDefaultCommand(g.defaultCommand())
+                .withCommands(commandIndex.get(key));
+            }
           }
         });
 

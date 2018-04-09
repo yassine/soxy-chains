@@ -57,7 +57,7 @@ public class SoxyChainsModule extends AbstractModule {
       SimpleModule simpleModule = new SimpleModule();
       simpleModule.addDeserializer(ServicesConfiguration.class,
         new PluginsConfigDeserializer( ServicesPlugin.class,
-              (map) -> new ServicesConfiguration((Map<Class<? extends Plugin<ServicesPluginConfiguration>>, ServicesPluginConfiguration>) map)));
+          (map) -> new ServicesConfiguration((Map<Class<? extends Plugin<ServicesPluginConfiguration>>, ServicesPluginConfiguration>) map)));
       mapper.registerModule(simpleModule);
       return mapper;
     }
@@ -93,6 +93,6 @@ public class SoxyChainsModule extends AbstractModule {
   }
 
   @Retention(RetentionPolicy.RUNTIME) @BindingAnnotation
-  @interface Configuration{}
+  public @interface Configuration{}
 
 }

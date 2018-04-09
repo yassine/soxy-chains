@@ -8,6 +8,7 @@ import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
 import com.github.yassine.soxychains.subsystem.docker.image.task.ImageInstallTask;
 import com.github.yassine.soxychains.subsystem.docker.networking.NetworkingConfiguration;
+import com.google.auto.service.AutoService;
 import com.google.inject.Inject;
 import io.reactivex.Observable;
 import io.reactivex.Single;
@@ -18,7 +19,7 @@ import org.apache.commons.lang.StringUtils;
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.nameSpaceNetwork;
 
 @RunOn(Phase.INSTALL)
-@DependsOn(ImageInstallTask.class)
+@DependsOn(ImageInstallTask.class) @AutoService(Task.class)
 @RequiredArgsConstructor(onConstructor = @__(@Inject), access = AccessLevel.PUBLIC)
 public class NetworkingInstallTask implements Task{
   private final DockerProvider dockerProvider;

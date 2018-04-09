@@ -14,8 +14,8 @@ public class NetworkingImageRequirer implements ImageRequirer{
   static final String IMAGE_NAME = "soxy-driver";
   @Override
   public Observable<DockerImage> require() {
-    return Observable.just(new DockerImage("soxy-driver",
-      URI.create(Joiner.on("/").join(getClass().getPackage().getName().replaceAll("\\.","/"), IMAGE_NAME.replaceAll("-","_"))),
+    return Observable.just(new DockerImage(IMAGE_NAME,
+      URI.create(Joiner.on("/").join("classpath:/", getClass().getPackage().getName().replaceAll("\\.","/"), "soxy_driver")),
       ImmutableMap.of()
     ));
   }

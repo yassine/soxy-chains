@@ -4,19 +4,18 @@ import com.github.yassine.soxychains.plugin.ConfigKey;
 import com.github.yassine.soxychains.subsystem.service.ServicesPluginConfiguration;
 import com.google.common.collect.ImmutableList;
 import lombok.Getter;
-import lombok.experimental.Accessors;
 
 import javax.validation.constraints.NotNull;
 import java.util.List;
 
 import static com.github.yassine.soxychains.subsystem.service.gobetween.GobetweenConfiguration.ID;
 
-@Getter @ConfigKey(ID) @Accessors(fluent = true)
+@Getter @ConfigKey(ID)
 public class GobetweenConfiguration implements ServicesPluginConfiguration {
   public static final String ID = "gobetween";
   @NotNull
   private String  image       = ID;
-  @NotNull @Getter
+  @NotNull
   private String  serviceName = ID;
   @NotNull
   private Integer apiPort        = 7070;
@@ -26,6 +25,11 @@ public class GobetweenConfiguration implements ServicesPluginConfiguration {
   private Integer servicePort    = 8080;
   @NotNull
   private Integer syncPort       = 9080;
+
+  @Override
+  public String serviceName() {
+    return serviceName;
+  }
 
   @Override
   public String imageName() {

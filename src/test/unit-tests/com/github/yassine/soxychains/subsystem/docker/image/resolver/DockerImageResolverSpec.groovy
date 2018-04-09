@@ -1,9 +1,12 @@
 package com.github.yassine.soxychains.subsystem.docker.image.resolver
 
 import com.github.yassine.soxychains.subsystem.docker.image.DockerImageModule
+import com.github.yassine.soxychains.subsystem.service.ServicesPlugin
 import com.google.common.collect.ImmutableMap
 import com.google.common.io.Files
+import com.google.inject.AbstractModule
 import com.google.inject.Inject
+import com.google.inject.multibindings.Multibinder
 import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner
 import io.github.lukehutch.fastclasspathscanner.matchprocessor.FileMatchProcessor
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
@@ -11,7 +14,7 @@ import org.apache.commons.io.IOUtils
 import spock.guice.UseModules
 import spock.lang.Specification
 
-@UseModules(DockerImageModule)
+@UseModules([DockerImageModule, TestModule])
 class DockerImageResolverSpec extends Specification {
   @Inject
   DockerImageResolver resolver
@@ -59,6 +62,14 @@ class DockerImageResolverSpec extends Specification {
     then:
     Exception e = thrown()
     e instanceof RuntimeException
+  }
+
+  static class TestModule extends AbstractModule {
+
+    @Override
+    protected void configure() {
+      Multibinder<ServicesPlugin> multibinder = Multibinder.newSetBinder(binder(), ServicesPlugin.class);
+    }
   }
 
 }

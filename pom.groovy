@@ -29,6 +29,7 @@ project {
       }
     }
     dependency 'com.github.yassine:guice-artifacts:0.2.0'
+    dependency 'com.github.yassine:gobetween-java-client:0.1.1'
     dependency 'com.google.auto.service:auto-service:1.0-rc3'
     dependency 'com.google.guava:guava:21.0'
     dependency 'com.google.inject.extensions:guice-multibindings:4.1.0'

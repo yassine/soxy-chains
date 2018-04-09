@@ -8,6 +8,7 @@ import com.github.yassine.soxychains.subsystem.docker.NamespaceUtils;
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
 import com.github.yassine.soxychains.subsystem.docker.networking.NetworkingConfiguration;
+import com.google.auto.service.AutoService;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -28,7 +29,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 @Slf4j
-@RunOn(Phase.START)
+@RunOn(Phase.START) @AutoService(Task.class)
 @RequiredArgsConstructor(onConstructor = @__(@Inject), access = AccessLevel.PUBLIC)
 public class ServicesStartTask implements Task{
 
@@ -43,8 +44,8 @@ public class ServicesStartTask implements Task{
   public Single<Boolean> execute() {
     // actions to come are executed on each host in parallel
     return fromIterable(dockerProvider.dockers())
-      //Knowing that a service may require other ones to start before starting, services will be started
-      //in parallel as a waves of startup tasks that can be executed in parallel.
+      //Knowing that a service may require other ones to start before actually starting, services will be started
+      //in waves of tasks that can be executed in parallel.
       .flatMap(docker -> fromIterable(taskScheduler.scheduleInstances(services))
           //for each wave of services
           .flatMap(services -> fromFuture(supplyAsync(() -> fromIterable(services)

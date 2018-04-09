@@ -7,6 +7,8 @@ public class CoreModule extends PrivateModule{
   protected void configure() {
     bind(TaskLoader.class).to(TaskLoaderSupport.class);
     bind(TaskScheduleProvider.class).to(TaskScheduleProviderSupport.class);
+    bind(PhaseRunner.class).to(PhaseRunnerSupport.class);
     expose(TaskScheduleProvider.class);
+    expose(PhaseRunner.class);
   }
 }

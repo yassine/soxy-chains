@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -57,7 +58,7 @@ class DockerSupport implements Docker {
           .filter(network -> network.getName().equals(networkName))
           .findAny()
           .map( network -> {
-              log.warn(format("Network '%s' alreadyExists", network));
+              log.info(format("Network '%s' alreadyExists", network.getName()));
               return Maybe.just(network.getId());
             }
           )
@@ -94,7 +95,7 @@ class DockerSupport implements Docker {
           .map(v -> true)
         )
         .orElseGet(() -> {
-          log.warn(format("Cannot remove network '%s'. The network doesn't exist", networkName));
+          log.info(format("Cannot remove network '%s'. The network doesn't exist", networkName));
           return Maybe.just(false);
         })
     ))
@@ -238,21 +239,29 @@ class DockerSupport implements Docker {
             .execute().blockingGet();
           return true;
         })).subscribeOn(Schedulers.io())
-      ).defaultIfEmpty(false);
+      ).defaultIfEmpty(true);
   }
 
+  @Override
   public Maybe<String> buildImage(String tag, Consumer<BuildImageCmd> beforeCreate, Consumer<String> afterCreate){
-    return just(1)
-      .flatMap(v -> (this.<BuildImageCmd, BuildResponseItem, BuildImageResultCallback, String>getAsyncExecutor(client.buildImageCmd().withTag(tag), client.configuration()))
-        .withErrorFormatter((e) -> format("An error occurred before creating image '%s' : '%s'", tag, e.getMessage()))
-        .withSuccessFormatter((id) -> format("Successfully created image '%s'. Image ID: '%s'", tag, id))
-        .withResultExtractor(BuildImageResultCallback::awaitImageId)
-        .withBeforeExecute(beforeCreate)
-        .withAfterExecute(afterCreate)
-        .withCallBack(new BuildImageResultCallback())
-        .execute()
-        .subscribeOn(Schedulers.io())
-      );
+    return findImageByTag(tag)
+      .map(Optional::ofNullable)
+      .defaultIfEmpty(Optional.empty())
+      .flatMap(present -> present.map(Image::getId)
+        .map(Maybe::just)
+        .orElseGet(() -> just(1)
+          .flatMap(v -> (this.<BuildImageCmd, BuildResponseItem, BuildImageResultCallback, String>getAsyncExecutor(client.buildImageCmd().withTag(tag), client.configuration()))
+            .withErrorFormatter((e) -> format("An error occurred before creating image '%s' : '%s'", tag, e.getMessage()))
+            .withSuccessFormatter((id) -> format("Successfully created image '%s'. Image ID: '%s'", tag, id))
+            .withResultExtractor(BuildImageResultCallback::awaitImageId)
+            .withBeforeExecute(beforeCreate)
+            .withAfterExecute(afterCreate)
+            .withCallBack(new BuildImageResultCallback())
+            .execute()
+          )
+        )
+      )
+      .subscribeOn(Schedulers.io());
   }
 
   <CMD extends AsyncDockerCmd<CMD, ITEM>, ITEM, CALLBACK extends ResultCallback<ITEM>, RESULT> ASyncDockerExecutor<CMD, ITEM, CALLBACK, RESULT> getAsyncExecutor(CMD command, DockerHostConfiguration config){

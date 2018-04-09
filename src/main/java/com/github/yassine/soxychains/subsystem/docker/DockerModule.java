@@ -7,27 +7,25 @@ import com.github.yassine.soxychains.subsystem.docker.client.DockerProviderSuppo
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
 import com.github.yassine.soxychains.subsystem.docker.image.DockerImageModule;
 import com.github.yassine.soxychains.subsystem.docker.networking.NetworkingConfiguration;
-import com.google.inject.Exposed;
-import com.google.inject.PrivateModule;
+import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 
-public class DockerModule extends PrivateModule{
+public class DockerModule extends AbstractModule{
 
   @Override
   protected void configure() {
     bind(DockerProvider.class).to(DockerProviderSupport.class);
-    expose(DockerProvider.class);
     install(new DockerImageModule());
     install(new TemplatingModule());
   }
 
-  @Provides @Singleton @Exposed
+  @Provides @Singleton
   DockerConfiguration configuration(SoxyChainsConfiguration configuration){
     return configuration.getDocker();
   }
 
-  @Provides @Singleton @Exposed
+  @Provides @Singleton
   NetworkingConfiguration configuration(DockerConfiguration dockerConfiguration){
     return dockerConfiguration.getNetworkingConfiguration();
   }
