@@ -108,6 +108,13 @@ class DockerSupport implements Docker {
         try{
           return client.listContainersCmd()
             .withShowAll(true)
+            .withLabelFilter(
+              ImmutableMap.of(
+                NamespaceUtils.SYSTEM_LABEL, "",
+                NamespaceUtils.NAMESPACE_LABEL, dockerConfiguration.getNamespace(),
+                NamespaceUtils.ORIGINAL_LABEL, containerName
+              )
+            )
             .exec()
             .stream()
             .findAny()
@@ -115,7 +122,7 @@ class DockerSupport implements Docker {
               container -> CreateContainerStatus.of(
                 container,
                 format("Skipping container '%s' creation. The container already exists.", containerName),
-                container.getStatus().startsWith("Up")
+                container.getStatus() != null && container.getStatus().contains("Up")
               )
             )
             .orElseGet( () -> {
@@ -126,6 +133,13 @@ class DockerSupport implements Docker {
               afterCreate.accept(containerID);
               Container container = client.listContainersCmd()
                 .withShowAll(true)
+                .withLabelFilter(
+                  ImmutableMap.of(
+                    NamespaceUtils.SYSTEM_LABEL, "",
+                    NamespaceUtils.NAMESPACE_LABEL, dockerConfiguration.getNamespace(),
+                    NamespaceUtils.ORIGINAL_LABEL, containerName
+                  )
+                )
                 .exec()
                 .stream()
                 .findAny().get();
@@ -170,13 +184,14 @@ class DockerSupport implements Docker {
           return client.listContainersCmd()
             .withShowAll(true)
             .withLabelFilter(
-              ImmutableMap.<String, String>builder()
-                .put(NamespaceUtils.SYSTEM_LABEL, "")
-                .put(NamespaceUtils.NAMESPACE_LABEL, dockerConfiguration.getNamespace())
-                .build()
+              ImmutableMap.of(
+                NamespaceUtils.SYSTEM_LABEL, "",
+                NamespaceUtils.NAMESPACE_LABEL, dockerConfiguration.getNamespace()
+              )
             )
             .exec()
             .stream()
+            .filter(container -> stream(container.getNames()).anyMatch(name -> name.contains(containerName)))
             .findAny()
             .map(container -> {
               if (container.getStatus().contains("Up")) {

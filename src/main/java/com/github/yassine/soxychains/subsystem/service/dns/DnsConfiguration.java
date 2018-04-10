@@ -15,7 +15,7 @@ public class DnsConfiguration implements ServicesPluginConfiguration {
   @NotNull
   private String  serviceName    = ID;
   @NotNull
-  private Integer servicePort    = 53;
+  private Integer servicePort    = 5353;
   @NotNull
   private Integer managementPort = 8070;
 

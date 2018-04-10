@@ -6,6 +6,7 @@ import com.github.yassine.soxychains.core.RunOn;
 import com.github.yassine.soxychains.core.Task;
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
+import com.google.auto.service.AutoService;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import io.reactivex.Single;
@@ -24,7 +25,7 @@ import static io.reactivex.Observable.fromIterable;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 @Slf4j
-@RunOn(Phase.STOP)
+@RunOn(Phase.STOP) @AutoService(Task.class)
 @RequiredArgsConstructor(onConstructor = @__(@Inject), access = AccessLevel.PUBLIC)
 public class ServicesStopTask implements Task{
 
@@ -51,7 +52,6 @@ public class ServicesStopTask implements Task{
                   (container) -> {}
                 ).subscribeOn(Schedulers.io()).map(result -> true)
               )
-              // wait for programmatic startup check
               // reduce the results as a single boolean value
               .defaultIfEmpty(false).reduce(true, (a,b) -> a && b).blockingGet())
             )

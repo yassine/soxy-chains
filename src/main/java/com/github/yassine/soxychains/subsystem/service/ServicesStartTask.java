@@ -58,6 +58,7 @@ public class ServicesStartTask implements Task{
                     service.configureContainer(createContainer, configOf(service), dockerConfiguration);
                     createContainer.withNetworkMode(nameSpaceNetwork(dockerConfiguration, networkingConfiguration.getNetworkName()));
                     createContainer.withName(nameSpaceContainer(dockerConfiguration, configOf(service).serviceName()));
+                    createContainer.withImage(NamespaceUtils.nameSpaceImage(dockerConfiguration, configOf(service).imageName()));
                     createContainer.withLabels(
                       ImmutableMap.<String, String>builder()
                         .putAll(ofNullable(createContainer.getLabels()).orElse(ImmutableMap.of()))

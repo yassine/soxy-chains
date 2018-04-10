@@ -1,27 +1,30 @@
 package com.github.yassine.soxychains.cli
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.yassine.soxychains.SoxyChainsApplication
-import com.github.yassine.soxychains.SoxyChainsConfiguration
+import com.github.yassine.soxychains.SoxyChainsModule
 import com.github.yassine.soxychains.TestUtils
-import com.github.yassine.soxychains.subsystem.service.consul.ConsulConfiguration
-import com.github.yassine.soxychains.subsystem.service.dns.DnsConfiguration
-import com.github.yassine.soxychains.subsystem.service.gobetween.GobetweenConfiguration
+import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration
+import com.github.yassine.soxychains.subsystem.docker.image.api.ImageRequirer
 import com.google.common.io.Files
+import com.google.inject.AbstractModule
+import com.google.inject.Inject
+import io.reactivex.Observable
 import org.apache.commons.io.IOUtils
-import spock.lang.Shared
+import spock.guice.UseModules
+import spock.lang.Ignore
 import spock.lang.Specification
 import spock.lang.Stepwise
 
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.nameSpaceImage
-import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.nameSpaceNetwork
 import static java.util.Arrays.stream
 
-@Stepwise
+@Stepwise @UseModules(TestModule)
 class InstallCommandSpec extends Specification {
 
-  @Shared
-  private ObjectMapper mapper = TestUtils.mapper()
+  @Inject
+  private Set<ImageRequirer> imageRequirers
+  @Inject
+  private DockerConfiguration configuration
 
   def "it should create docker images for required services"() {
     setup:
@@ -30,49 +33,48 @@ class InstallCommandSpec extends Specification {
     workDir.deleteOnExit()
     IOUtils.copy(getClass().getResourceAsStream("config-install.yaml"), new FileOutputStream(config))
     SoxyChainsApplication.main("install", "-c", config.getAbsolutePath())
-    def configuration = mapper.readValue(config, SoxyChainsConfiguration.class)
-    def dockerClient = TestUtils.dockerClient(configuration.getDocker().getHosts().get(0))
-
+    def dockerClient  = TestUtils.dockerClient(configuration.getHosts().get(0))
+    def dockerImages  = dockerClient.listImagesCmd().exec()
     expect:
-    dockerClient.listImagesCmd().exec().stream().anyMatch{ image ->
-      stream(image.getRepoTags()).anyMatch{tag -> tag.contains(nameSpaceImage(configuration.getDocker(), ConsulConfiguration.ID))}
-    }
-    dockerClient.listImagesCmd().exec().stream().anyMatch{ image ->
-      stream(image.getRepoTags()).anyMatch{tag -> tag.contains(nameSpaceImage(configuration.getDocker(), GobetweenConfiguration.ID))}
-    }
-    dockerClient.listImagesCmd().exec().stream().anyMatch{ image ->
-      stream(image.getRepoTags()).anyMatch{tag -> tag.contains(nameSpaceImage(configuration.getDocker(), DnsConfiguration.ID))}
-    }
-    dockerClient.listNetworksCmd().exec().stream().anyMatch{ network ->
-      (nameSpaceNetwork(configuration.getDocker(), configuration.getDocker().getNetworkingConfiguration().getNetworkName()) == network.getName())
-    }
+    //all the required images are created
+    Observable.fromIterable(imageRequirers)
+      .flatMap({requirer -> requirer.require()})
+      .map({requiredImage -> requiredImage.getName()})
+      .map({requiredImage -> dockerImages.stream().anyMatch{ repoImage ->
+        stream(repoImage.getRepoTags()).anyMatch{tag -> tag.contains(nameSpaceImage(configuration, requiredImage))}
+      }})
+      .reduce(true, { a, b -> a && b })
+      .blockingGet()
   }
 
-  def "it should remove docker images for required services"() {
+  @Ignore
+  def "it should remove all the docker images required by the platform"() {
     setup:
     File workDir = Files.createTempDir()
     File config  = new File(workDir, "config.yaml")
     workDir.deleteOnExit()
     IOUtils.copy(getClass().getResourceAsStream("config-install.yaml"), new FileOutputStream(config))
     SoxyChainsApplication.main("uninstall", "-c", config.getAbsolutePath())
-    def configuration = mapper.readValue(config, SoxyChainsConfiguration.class)
-    def dockerClient = TestUtils.dockerClient(configuration.getDocker().getHosts().get(0))
+    def dockerClient = TestUtils.dockerClient(configuration.getHosts().get(0))
+    def dockerImages  = dockerClient.listImagesCmd().exec()
 
     expect:
-    dockerClient.listImagesCmd().exec().stream().allMatch{ image ->
-      stream(image.getRepoTags()).noneMatch{tag -> tag.contains(nameSpaceImage(configuration.getDocker(), "consul"))}
-    }
-    dockerClient.listImagesCmd().exec().stream().allMatch{ image ->
-      stream(image.getRepoTags()).noneMatch{tag -> tag.contains(nameSpaceImage(configuration.getDocker(), "gobetween"))}
-    }
-    dockerClient.listImagesCmd().exec().stream().allMatch{ image ->
-      stream(image.getRepoTags()).noneMatch{tag -> tag.contains(nameSpaceImage(configuration.getDocker(), "dns_server"))}
-    }
-    dockerClient.listNetworksCmd().exec().stream().noneMatch{ network ->
-      (nameSpaceNetwork(configuration.getDocker(), configuration.getDocker().getNetworkingConfiguration().getNetworkName()) == network.getName())
-    }
+    Observable.fromIterable(imageRequirers)
+      .flatMap({requirer -> requirer.require()})
+      .map({requiredImage -> requiredImage.getName()})
+      .map({requiredImage -> dockerImages.stream().allMatch{ repoImage ->
+        stream(repoImage.getRepoTags()).noneMatch{tag -> tag.contains(nameSpaceImage(configuration, requiredImage))}
+      }})
+      .reduce(true, { a, b -> a && b })
+      .blockingGet()
   }
 
-
+  static class TestModule extends AbstractModule{
+    @Override
+    protected void configure() {
+      InputStream is = getClass().getResourceAsStream("config-install.yaml")
+      install(new SoxyChainsModule(is))
+    }
+  }
 
 }
