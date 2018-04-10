@@ -11,7 +11,6 @@ import com.google.inject.Inject
 import io.reactivex.Observable
 import org.apache.commons.io.IOUtils
 import spock.guice.UseModules
-import spock.lang.Ignore
 import spock.lang.Specification
 import spock.lang.Stepwise
 
@@ -47,7 +46,6 @@ class InstallCommandSpec extends Specification {
       .blockingGet()
   }
 
-  @Ignore
   def "it should remove all the docker images required by the platform"() {
     setup:
     File workDir = Files.createTempDir()
