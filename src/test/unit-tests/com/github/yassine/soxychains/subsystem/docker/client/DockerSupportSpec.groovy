@@ -404,6 +404,7 @@ class DockerSupportSpec extends Specification {
     Container container = Mock()
     container.getStatus() >> "Up 3 hours"
     container.getId() >> "STUBBED_ID"
+    container.getNames() >> ["my-container"]
     containers.add(container)
     ListContainersCmd listContainersCmd   = Mock()
     StopContainerCmd stopContainerCommand = Mock()
@@ -449,6 +450,7 @@ class DockerSupportSpec extends Specification {
     Container container = Mock()
     container.getStatus() >> "Exited"
     container.getId() >> "STUBBED_ID"
+    container.getNames() >> ["my-container"]
     containers.add(container)
     ListContainersCmd listContainersCmd   = Mock()
     StopContainerCmd stopContainerCommand = Mock()
