@@ -20,7 +20,7 @@ project {
     dependency{
       groupId 'com.github.docker-java'
       artifactId 'docker-java'
-      version '3.0.6'
+      version '3.0.14'
       exclusions{
         exclusion{
           groupId 'log4j'
