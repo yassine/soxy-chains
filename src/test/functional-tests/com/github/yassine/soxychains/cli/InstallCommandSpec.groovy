@@ -9,7 +9,6 @@ import com.github.yassine.soxychains.subsystem.service.dns.DnsConfiguration
 import com.github.yassine.soxychains.subsystem.service.gobetween.GobetweenConfiguration
 import com.google.common.io.Files
 import org.apache.commons.io.IOUtils
-import org.junit.Ignore
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Stepwise
@@ -23,8 +22,6 @@ class InstallCommandSpec extends Specification {
 
   @Shared
   private ObjectMapper mapper = TestUtils.mapper()
-  @Shared
-  private SoxyChainsConfiguration configuration
 
   def "it should create docker images for required services"() {
     setup:

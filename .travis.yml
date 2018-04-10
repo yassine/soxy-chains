@@ -3,12 +3,7 @@ sudo: required
 dist: trusty
 services:
   - docker
-install:
-  - docker pull yassine/soxy-driver
-  - docker pull yassine/alpine-gobetween
-  - docker pull yassine/alpine-consul
-  - mvn package -DskipTests=true
 script:
-  - mvn test post-integration-test
+  - mvn clean test post-integration-test
 after_success:
   - mvn coveralls:report
