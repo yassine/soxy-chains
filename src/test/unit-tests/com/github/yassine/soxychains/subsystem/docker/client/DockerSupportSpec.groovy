@@ -607,6 +607,7 @@ class DockerSupportSpec extends Specification {
     DockerHostConfiguration hostConfiguration   = Mock()
     AtomicInteger removeImageCounter = new AtomicInteger(0)
     ArrayList<Integer> callTrace = Collections.synchronizedList(new ArrayList<>())
+    removeImageCmd.withForce(_ as Boolean) >> removeImageCmd
     removeImageCmd.exec() >> { args ->
       removeImageCounter.incrementAndGet()
       callTrace.add(2)

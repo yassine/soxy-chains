@@ -1,6 +1,7 @@
 package com.github.yassine.soxychains.subsystem.docker.image.resolver
 
 import com.github.yassine.soxychains.subsystem.docker.image.DockerImageModule
+import com.github.yassine.soxychains.subsystem.layer.LayerModule
 import com.github.yassine.soxychains.subsystem.service.ServicesPlugin
 import com.google.common.collect.ImmutableMap
 import com.google.common.io.Files
@@ -14,7 +15,7 @@ import org.apache.commons.io.IOUtils
 import spock.guice.UseModules
 import spock.lang.Specification
 
-@UseModules([DockerImageModule, TestModule])
+@UseModules([DockerImageModule, TestModule, LayerModule])
 class DockerImageResolverSpec extends Specification {
   @Inject
   DockerImageResolver resolver

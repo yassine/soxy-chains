@@ -246,7 +246,7 @@ class DockerSupport implements Docker {
     return findImageByTag(tag)
       .flatMap(image ->
         Maybe.fromFuture(CompletableFuture.supplyAsync(()->{
-          new SyncDockerExecutor<>(client.removeImageCmd(image.getId()), client.configuration() )
+          new SyncDockerExecutor<>(client.removeImageCmd(image.getId()).withForce(true), client.configuration() )
             .withSuccessFormatter( (v) -> format("Successfully removed image '%s'", tag) )
             .withErrorFormatter( (e) -> format("An occurred before removing image '%s' : '%s'", tag, e.getMessage()) )
             .withBeforeExecute(beforeRemove)

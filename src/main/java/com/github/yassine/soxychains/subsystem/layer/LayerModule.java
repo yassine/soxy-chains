@@ -12,7 +12,7 @@ public class LayerModule extends AbstractModule{
   @Override
   protected void configure() {
     MapBinder<Class<? extends AbstractLayerConfiguration>, LayerService> mapBinder =
-      (MapBinder<Class<? extends AbstractLayerConfiguration>, LayerService>) MapBinder.newMapBinder(binder(), TypeLiteral.get(Types.createParameterizedType(Class.class, com.google.inject.util.Types.subtypeOf(AbstractLayerConfiguration.class))), TypeLiteral.get(Types.createParameterizedType(LayerService.class)));
+      (MapBinder<Class<? extends AbstractLayerConfiguration>, LayerService>) MapBinder.newMapBinder(binder(), TypeLiteral.get(Types.createParameterizedType(Class.class, com.google.inject.util.Types.subtypeOf(AbstractLayerConfiguration.class))), TypeLiteral.get(LayerService.class));
     loadSPIClasses(LayerService.class).stream()
       .filter(clazz -> TypeResolver.resolveRawArguments(LayerService.class, clazz).length > 0)
       .forEach(clazz -> {

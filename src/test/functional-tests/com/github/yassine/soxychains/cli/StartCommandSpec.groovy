@@ -31,7 +31,7 @@ import static java.util.Arrays.stream
 class StartCommandSpec extends Specification {
 
   @Inject
-  private Set<ImageRequirer> imageRequirers;
+  private Set<ImageRequirer> imageRequirers
   @Inject
   private DockerConfiguration configuration
   @Inject
