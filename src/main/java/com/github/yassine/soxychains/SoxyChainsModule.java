@@ -7,10 +7,13 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.github.yassine.artifacts.guice.scheduling.TaskSchedulerModule;
+import com.github.yassine.artifacts.guice.utils.GuiceUtils;
 import com.github.yassine.soxychains.core.CoreModule;
 import com.github.yassine.soxychains.core.PluginsConfigDeserializer;
 import com.github.yassine.soxychains.plugin.Plugin;
 import com.github.yassine.soxychains.subsystem.docker.DockerModule;
+import com.github.yassine.soxychains.subsystem.layer.LayerModule;
+import com.github.yassine.soxychains.subsystem.layer.LayerService;
 import com.github.yassine.soxychains.subsystem.service.ServicesConfiguration;
 import com.github.yassine.soxychains.subsystem.service.ServicesModule;
 import com.github.yassine.soxychains.subsystem.service.ServicesPlugin;
@@ -21,11 +24,14 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import net.jodah.typetools.TypeResolver;
 
 import javax.validation.*;
 import java.io.InputStream;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.reflect.Modifier;
 import java.util.Map;
 import java.util.Set;
 
@@ -41,9 +47,10 @@ public class SoxyChainsModule extends AbstractModule {
     install(new ServicesModule());
     install(new CoreModule());
     install(new TaskSchedulerModule());
+    install(new LayerModule());
   }
 
-  @RequiredArgsConstructor
+  @RequiredArgsConstructor @Slf4j
   static class ConfigurationModule extends AbstractModule{
 
     private final InputStream configStream;
@@ -54,12 +61,26 @@ public class SoxyChainsModule extends AbstractModule {
       ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
       mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
       mapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
+      registerLayerSubtypes(mapper);
       SimpleModule simpleModule = new SimpleModule();
       simpleModule.addDeserializer(ServicesConfiguration.class,
         new PluginsConfigDeserializer( ServicesPlugin.class,
           (map) -> new ServicesConfiguration((Map<Class<? extends Plugin<ServicesPluginConfiguration>>, ServicesPluginConfiguration>) map)));
       mapper.registerModule(simpleModule);
+
       return mapper;
+    }
+
+    private void registerLayerSubtypes(ObjectMapper mapper){
+      Set<Class<? extends LayerService>> implementations = GuiceUtils.loadSPIClasses(LayerService.class);
+      implementations.stream()
+        .filter(clazz -> !Modifier.isAbstract(clazz.getModifiers()))
+        .filter(clazz -> TypeResolver.resolveRawArguments(LayerService.class, clazz).length == 0)
+        .forEach(clazz -> log.warn("Unable to register Class '{}'. Declarative type-erasure ?", clazz));
+      implementations.stream()
+        .filter(clazz -> !Modifier.isAbstract(clazz.getModifiers()))
+        .filter(clazz -> TypeResolver.resolveRawArguments(LayerService.class, clazz).length >= 1)
+        .forEach(clazz -> mapper.registerSubtypes(TypeResolver.resolveRawArguments(LayerService.class, clazz)[1]));
     }
 
     @SuppressWarnings("unchecked")

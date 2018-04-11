@@ -1,5 +1,6 @@
 package com.github.yassine.soxychains.subsystem.service;
 
+import com.github.yassine.soxychains.subsystem.docker.image.RequiresImage;
 import com.github.yassine.soxychains.subsystem.docker.image.api.DockerImage;
 import com.github.yassine.soxychains.subsystem.docker.image.api.ImageRequirer;
 import com.google.auto.service.AutoService;

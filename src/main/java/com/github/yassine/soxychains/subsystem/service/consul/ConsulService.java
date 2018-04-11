@@ -1,6 +1,6 @@
 package com.github.yassine.soxychains.subsystem.service.consul;
 
-import com.github.yassine.soxychains.subsystem.service.RequiresImage;
+import com.github.yassine.soxychains.subsystem.docker.image.RequiresImage;
 import com.github.yassine.soxychains.subsystem.service.ServicesPlugin;
 import com.google.auto.service.AutoService;
 
