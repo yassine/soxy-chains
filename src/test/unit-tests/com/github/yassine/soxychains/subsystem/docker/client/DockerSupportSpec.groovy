@@ -203,6 +203,7 @@ class DockerSupportSpec extends Specification {
       Container container = Mock()
       container.getStatus() >> ""
       container.getId() >> "STUBBED_ID"
+      container.getNames() >> ['my-container']
       containers.add(container)
       return createContainerResponse
     }
@@ -245,6 +246,7 @@ class DockerSupportSpec extends Specification {
     Container container                   = Mock()
     container.getStatus() >> ""
     container.getId() >> "STUBBED_ID"
+    container.getNames() >> ["my-container"]
     containers.add(container)
     createContainerResponse.getId() >> "STUBBED_ID"
     createContainerCmd.withName(_ as String) >> createContainerCmd

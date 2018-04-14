@@ -7,6 +7,7 @@ import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.Network;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
+import com.github.yassine.soxychains.subsystem.docker.NamespaceUtils;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerHostConfiguration;
 import com.google.common.base.Strings;
@@ -120,9 +121,15 @@ class DockerSupport implements Docker {
   public Maybe<Container> findContainer(String containerName) {
     return fromFuture(supplyAsync(() -> client.listContainersCmd()
       .withShowAll(true)
-      .withLabelFilter(labelizeNamedEntity(containerName, dockerConfiguration))
+      .withLabelFilter(
+        ImmutableMap.of(
+          NamespaceUtils.SYSTEM_LABEL, "",
+          NamespaceUtils.NAMESPACE_LABEL, dockerConfiguration.getNamespace()
+        )
+      )
       .exec()
       .stream()
+      .filter(container1 -> Arrays.stream(container1.getNames()).anyMatch(name -> name.contains(containerName)))
       .findAny()
       .map(Maybe::just)
       .orElseGet(Maybe::empty)
@@ -147,15 +154,17 @@ class DockerSupport implements Docker {
               beforeCreate.accept(command);
               String containerID = command.exec().getId();
               afterCreate.accept(containerID);
-              client.listContainersCmd().withShowAll(true).exec()
-                .forEach(container -> {
-                  System.out.println(String.format("%s : %s", Arrays.toString(container.getNames()), container.getLabels()));
-                });
               Container container = client.listContainersCmd()
                 .withShowAll(true)
-                .withLabelFilter(labelizeNamedEntity(containerName, dockerConfiguration))
+                .withLabelFilter(
+                  ImmutableMap.of(
+                    NamespaceUtils.SYSTEM_LABEL, "",
+                    NamespaceUtils.NAMESPACE_LABEL, dockerConfiguration.getNamespace()
+                  )
+                )
                 .exec()
                 .stream()
+                .filter(container1 -> Arrays.stream(container1.getNames()).anyMatch(name -> name.contains(containerName)))
                 .findAny().get();
               return CreateContainerStatus.of(container, format("Successfully created container '%s' with id '%s'.", containerName, containerID), false);
             });
