@@ -67,7 +67,7 @@ public class NamespaceUtils {
   }
 
   public static String soxyDriverName(DockerConfiguration dockerConfiguration){
-    return Joiner.on("__").join(dockerConfiguration, SOXY_DRIVER_NAME);
+    return Joiner.on("__").join(dockerConfiguration.getNamespace(), SOXY_DRIVER_NAME);
   }
 
 }
