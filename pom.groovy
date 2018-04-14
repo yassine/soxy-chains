@@ -181,8 +181,8 @@ project {
             include '**/*Spec'
           }
           additionalClasspathElements {
-            additionalClasspathElement '${project.basedir}/src/test/resources'
             additionalClasspathElement '${project.build.testOutputDirectory}'
+            additionalClasspathElement '${project.basedir}/src/test/resources'
           }
           argLine '${surefireArgLine}'
         }
