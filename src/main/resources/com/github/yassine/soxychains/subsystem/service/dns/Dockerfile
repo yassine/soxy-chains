@@ -1,7 +1,7 @@
 FROM alpine:edge
 
 ADD config /etc/config
-RUN apk update && \
+RUN apk update && apk upgrade && \
     apk add --no-cache pdnsd && \
     rm -rf /var/cache/apk/* && \
     chmod 0444 /etc/config/pdnsd.conf && \
