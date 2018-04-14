@@ -143,7 +143,8 @@ class DockerSupport implements Docker {
             )
             .orElseGet( () -> {
               CreateContainerCmd command = client.createContainerCmd(image)
-                .withName(containerName);
+                .withName(containerName)
+                .withLabels(labelizeNamedEntity(containerName, dockerConfiguration));
               beforeCreate.accept(command);
               String containerID = command.exec().getId();
               afterCreate.accept(containerID);
