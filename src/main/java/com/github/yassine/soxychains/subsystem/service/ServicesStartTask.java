@@ -1,5 +1,6 @@
 package com.github.yassine.soxychains.subsystem.service;
 
+import com.github.yassine.artifacts.guice.scheduling.DependsOn;
 import com.github.yassine.artifacts.guice.scheduling.TaskScheduler;
 import com.github.yassine.soxychains.core.Phase;
 import com.github.yassine.soxychains.core.RunOn;
@@ -8,6 +9,7 @@ import com.github.yassine.soxychains.subsystem.docker.NamespaceUtils;
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
 import com.github.yassine.soxychains.subsystem.docker.networking.NetworkingConfiguration;
+import com.github.yassine.soxychains.subsystem.docker.networking.task.NetworkingStartupTask;
 import com.google.auto.service.AutoService;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -28,7 +30,7 @@ import static io.reactivex.Observable.fromIterable;
 import static java.util.Optional.ofNullable;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 
-@Slf4j
+@Slf4j @DependsOn(NetworkingStartupTask.class)
 @RunOn(Phase.START) @AutoService(Task.class)
 @RequiredArgsConstructor(onConstructor = @__(@Inject), access = AccessLevel.PUBLIC)
 public class ServicesStartTask implements Task{
@@ -52,7 +54,7 @@ public class ServicesStartTask implements Task{
               //for each service
               .flatMapMaybe(service ->
                 //create & start the container that relates to the given service
-                docker.startContainer(configOf(service).serviceName(), configOf(service).imageName(),
+                docker.runContainer(configOf(service).serviceName(), configOf(service).imageName(),
                   // The pre-create container hook is used to allow services configuring the container before its creation
                   (createContainer) -> {
                     service.configureContainer(createContainer, configOf(service), dockerConfiguration);

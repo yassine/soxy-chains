@@ -1,11 +1,13 @@
 package com.github.yassine.soxychains.subsystem.service;
 
+import com.github.yassine.artifacts.guice.scheduling.ReverseDependsOn;
 import com.github.yassine.artifacts.guice.scheduling.TaskScheduler;
 import com.github.yassine.soxychains.core.Phase;
 import com.github.yassine.soxychains.core.RunOn;
 import com.github.yassine.soxychains.core.Task;
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
+import com.github.yassine.soxychains.subsystem.docker.networking.task.NetworkingStopTask;
 import com.google.auto.service.AutoService;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -25,7 +27,7 @@ import static io.reactivex.Observable.fromIterable;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 @Slf4j
-@RunOn(Phase.STOP) @AutoService(Task.class)
+@RunOn(Phase.STOP) @AutoService(Task.class) @ReverseDependsOn(NetworkingStopTask.class)
 @RequiredArgsConstructor(onConstructor = @__(@Inject), access = AccessLevel.PUBLIC)
 public class ServicesStopTask implements Task{
 

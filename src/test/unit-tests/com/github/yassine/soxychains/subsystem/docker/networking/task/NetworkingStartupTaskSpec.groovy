@@ -1,6 +1,7 @@
 package com.github.yassine.soxychains.subsystem.docker.networking.task
 
 import com.github.dockerjava.api.command.CreateNetworkCmd
+import com.github.yassine.soxychains.SoxyChainsConfiguration
 import com.github.yassine.soxychains.subsystem.docker.client.Docker
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration
@@ -10,13 +11,14 @@ import spock.lang.Specification
 
 import java.util.function.Consumer
 
-class NetworkingInstallTaskSpec extends Specification {
+class NetworkingStartupTaskSpec extends Specification {
 
   Docker docker = Mock()
   DockerProvider dockerProvider = Mock()
-  DockerConfiguration configuration = new DockerConfiguration()
-  NetworkingConfiguration networkingConfiguration = new NetworkingConfiguration()
-  NetworkingInstallTask task = new NetworkingInstallTask(dockerProvider, configuration, networkingConfiguration)
+  SoxyChainsConfiguration soxyChainsConfiguration = new SoxyChainsConfiguration()
+  DockerConfiguration configuration = soxyChainsConfiguration.getDocker()
+  NetworkingConfiguration networkingConfiguration = configuration.getNetworkingConfiguration()
+  NetworkingStartupTask task = new NetworkingStartupTask(dockerProvider, configuration, networkingConfiguration, soxyChainsConfiguration)
 
   void setup () {
     dockerProvider.dockers() >> [ docker ]

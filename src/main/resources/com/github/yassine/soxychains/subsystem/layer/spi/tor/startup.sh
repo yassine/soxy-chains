@@ -7,9 +7,9 @@ ENTRY_NODES=${TOR_ENTRY_NODES:=''}
 EXCLUDE_NODES=${TOR_EXCLUDE_NODES:=''}
 EXCLUDE_EXIT_NODES=${TOR_EXCLUDE_EXIT_NODES:=''}
 
-echo 'Log notice stdout' > /etc/tor-config
-echo 'SocksPort 0.0.0.0:9080' >> /etc/tor-config
-echo 'GeoIPExcludeUnknown 1' >> /etc/tor-config
+echo 'Log notice stdout' > ${TOR_CONFIG_FILE}
+echo 'SocksPort 0.0.0.0:8080' >> ${TOR_CONFIG_FILE}
+echo 'GeoIPExcludeUnknown 1' >> ${TOR_CONFIG_FILE}
 
 if [ ! -z "${EXCLUDE_EXIT_NODES}" ]
 then
@@ -31,4 +31,4 @@ then
   echo "EntryNodes ${ENTRY_NODES}" >> ${TOR_CONFIG_FILE}
 fi
 
-tor -c /etc/tor-config
+tor -c ${TOR_CONFIG_FILE}

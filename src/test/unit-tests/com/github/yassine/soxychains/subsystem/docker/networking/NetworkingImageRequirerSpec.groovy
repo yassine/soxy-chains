@@ -1,5 +1,6 @@
 package com.github.yassine.soxychains.subsystem.docker.networking
 
+import com.github.yassine.soxychains.subsystem.docker.NamespaceUtils
 import spock.lang.Specification
 
 class NetworkingImageRequirerSpec extends Specification {
@@ -9,7 +10,7 @@ class NetworkingImageRequirerSpec extends Specification {
     def requirer = new NetworkingImageRequirer()
     def image = requirer.require().blockingFirst()
     expect:
-    image.getName() == NetworkingImageRequirer.IMAGE_NAME
-    image.getRoot().toString().endsWith(NetworkingImageRequirer.IMAGE_NAME.replaceAll("-","_"))
+    image.getName() == NamespaceUtils.SOXY_DRIVER_NAME
+    image.getRoot().toString().endsWith(NamespaceUtils.SOXY_DRIVER_NAME.replaceAll("-","_"))
   }
 }

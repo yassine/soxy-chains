@@ -3,6 +3,7 @@ package com.github.yassine.soxychains.subsystem.docker.client;
 import com.github.dockerjava.api.command.*;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Image;
+import com.github.dockerjava.api.model.Network;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerHostConfiguration;
 import io.reactivex.Maybe;
 
@@ -23,12 +24,14 @@ public interface Docker {
   Maybe<Boolean> removeNetwork(String networkName,
                                Consumer<RemoveNetworkCmd> beforeRemove,
                                Consumer<String> afterRemove);
-  Maybe<Container> startContainer(String containerName,
-                                  String image,
-                                  Consumer<CreateContainerCmd> beforeCreate,
-                                  Consumer<String> afterCreate,
-                                  Consumer<StartContainerCmd> beforeStart,
-                                  Consumer<String> afterStart);
+  Maybe<Network> findNetwork(String networkName);
+  Maybe<Container> findContainer(String networkName);
+  Maybe<Container> runContainer(String containerName,
+                                String image,
+                                Consumer<CreateContainerCmd> beforeCreate,
+                                Consumer<String> afterCreate,
+                                Consumer<StartContainerCmd> beforeStart,
+                                Consumer<String> afterStart);
   Maybe<Boolean> stopContainer(String containerName,
                                Consumer<StopContainerCmd> beforeStop,
                                Consumer<String> afterStop,

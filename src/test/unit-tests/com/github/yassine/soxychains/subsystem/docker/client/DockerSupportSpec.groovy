@@ -223,7 +223,7 @@ class DockerSupportSpec extends Specification {
 
     when:
     DockerSupport dockerHelperSupport = new DockerSupport(docker, dockerSubsystemConfiguration)
-    dockerHelperSupport.startContainer("my-container", "my-image", {test -> callTrace.add(1)}, {test -> callTrace.add(3)}, {test -> callTrace.add(4)}, {test -> callTrace.add(6)}).blockingGet()
+    dockerHelperSupport.runContainer("my-container", "my-image", { test -> callTrace.add(1)}, { test -> callTrace.add(3)}, { test -> callTrace.add(4)}, { test -> callTrace.add(6)}).blockingGet()
 
     then:
     createContainerCounter.get() == 1
@@ -271,7 +271,7 @@ class DockerSupportSpec extends Specification {
 
     when:
     DockerSupport dockerHelperSupport = new DockerSupport(docker, dockerSubsystemConfiguration)
-    dockerHelperSupport.startContainer("my-container", "my-image", {test -> callTrace.add(1)}, {test -> callTrace.add(3)}, {test -> callTrace.add(4)}, {test -> callTrace.add(6)}).blockingGet()
+    dockerHelperSupport.runContainer("my-container", "my-image", { test -> callTrace.add(1)}, { test -> callTrace.add(3)}, { test -> callTrace.add(4)}, { test -> callTrace.add(6)}).blockingGet()
 
     then:
     createContainerCounter.get() == 0
@@ -317,7 +317,7 @@ class DockerSupportSpec extends Specification {
 
     when:
     DockerSupport dockerHelperSupport = new DockerSupport(docker, dockerSubsystemConfiguration)
-    dockerHelperSupport.startContainer("my-container", "my-image", {test -> callTrace.add(1)}, {test -> callTrace.add(2)}, {test -> callTrace.add(3)}, {test -> callTrace.add(4)}).blockingGet()
+    dockerHelperSupport.runContainer("my-container", "my-image", { test -> callTrace.add(1)}, { test -> callTrace.add(2)}, { test -> callTrace.add(3)}, { test -> callTrace.add(4)}).blockingGet()
 
     then:
     createContainerCounter.get() == 0
@@ -349,7 +349,7 @@ class DockerSupportSpec extends Specification {
 
     when:
     DockerSupport dockerHelperSupport = new DockerSupport(docker, dockerSubsystemConfiguration)
-    boolean created = dockerHelperSupport.startContainer("my-container", "my-image", {test -> callTrace.add(1)}, {test -> callTrace.add(2)}, {test -> callTrace.add(3)}, {test -> callTrace.add(4)}).blockingGet()
+    boolean created = dockerHelperSupport.runContainer("my-container", "my-image", { test -> callTrace.add(1)}, { test -> callTrace.add(2)}, { test -> callTrace.add(3)}, { test -> callTrace.add(4)}).blockingGet()
 
     then:
     !created
@@ -390,7 +390,7 @@ class DockerSupportSpec extends Specification {
 
     when:
     DockerSupport dockerHelperSupport = new DockerSupport(docker, dockerSubsystemConfiguration)
-    boolean started = dockerHelperSupport.startContainer("my-container", "my-image", {test -> callTrace.add(1)}, {test -> callTrace.add(2)}, {test -> callTrace.add(3)}, {test -> callTrace.add(4)}).blockingGet()
+    boolean started = dockerHelperSupport.runContainer("my-container", "my-image", { test -> callTrace.add(1)}, { test -> callTrace.add(2)}, { test -> callTrace.add(3)}, { test -> callTrace.add(4)}).blockingGet()
 
     then:
     !started

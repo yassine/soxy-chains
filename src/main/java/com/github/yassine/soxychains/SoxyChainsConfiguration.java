@@ -13,7 +13,7 @@ import java.util.List;
 @Getter
 public class SoxyChainsConfiguration {
   @Valid @NotNull
-  private DockerConfiguration docker;
+  private DockerConfiguration docker = new DockerConfiguration();
   private ServicesConfiguration services;
   private List<AbstractLayerConfiguration> layers = new ArrayList<>();
 }

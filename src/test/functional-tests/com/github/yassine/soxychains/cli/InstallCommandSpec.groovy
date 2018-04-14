@@ -58,7 +58,7 @@ class InstallCommandSpec extends Specification {
 
     expect:
     Observable.fromIterable(imageRequirers)
-      .flatMap({requirer -> requirer.require()})
+      .flatMap{requirer -> requirer.require()}
       .map({requiredImage -> requiredImage.getName()})
       .map({requiredImage -> dockerImages.stream().allMatch{ repoImage ->
         stream(repoImage.getRepoTags()).noneMatch{tag -> tag.contains(nameSpaceImage(configuration, requiredImage))}

@@ -2,6 +2,7 @@ package com.github.yassine.soxychains.cli
 
 import com.github.dockerjava.api.model.Container
 import com.github.yassine.soxychains.SoxyChainsApplication
+import com.github.yassine.soxychains.SoxyChainsConfiguration
 import com.github.yassine.soxychains.SoxyChainsModule
 import com.github.yassine.soxychains.TestUtils
 import com.github.yassine.soxychains.subsystem.docker.NamespaceUtils
@@ -23,6 +24,7 @@ import spock.lang.Stepwise
 import java.util.stream.Collectors
 
 import static com.github.yassine.soxychains.plugin.PluginUtils.configClassOf
+import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.SOXY_DRIVER_NAME
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.nameSpaceContainer
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.nameSpaceImage
 import static java.util.Arrays.stream
@@ -30,6 +32,8 @@ import static java.util.Arrays.stream
 @Stepwise @UseModules(TestModule)
 class StartCommandSpec extends Specification {
 
+  @Inject
+  private SoxyChainsConfiguration soxyChainsConfiguration;
   @Inject
   private Set<ImageRequirer> imageRequirers
   @Inject
@@ -52,7 +56,7 @@ class StartCommandSpec extends Specification {
       .exec().stream().filter{container -> container.getStatus().contains("Up")}.collect(Collectors.<Container>toList())
 
     expect:
-    //all the required images are created
+    //all the required images have been created
     Observable.fromIterable(imageRequirers)
       .flatMap({ requirer -> requirer.require() })
       .map({ requiredImage -> requiredImage.getName() })
@@ -61,13 +65,33 @@ class StartCommandSpec extends Specification {
       }})
       .reduce(true, { a, b -> a && b })
       .blockingGet()
+
+    //the driver is running under the config provided namespace
+    dockerClient.listContainersCmd()
+      .withLabelFilter(NamespaceUtils.labelizeNamedEntity(SOXY_DRIVER_NAME, configuration))
+      .exec().stream()
+      .filter{container -> stream(container.getNames()).anyMatch{name -> name.contains(nameSpaceContainer(configuration, SOXY_DRIVER_NAME))}}
+      .filter{container -> container.getStatus().contains("Up")}
+      .findAny().isPresent()
+
+    //main network have been created using the soxy-driver
+    dockerClient.listNetworksCmd().exec()
+      .stream()
+      .filter{ network -> network.getDriver() == NamespaceUtils.soxyDriverName(configuration) }
+      .filter{ network -> network.getName().contains(NamespaceUtils.nameSpaceNetwork(configuration, configuration.getNetworkingConfiguration().getNetworkName())) }
+      .findAny()
+      .isPresent()
+
     //all services are up & running
     services.stream()
       .map{ service -> (ServicesPluginConfiguration) injector.getInstance(configClassOf((Class) service.getClass())) }
       .map{ serviceConfig -> nameSpaceContainer(configuration, serviceConfig.serviceName()) }
-      .allMatch{serviceName -> dockerContainers.stream().filter{container ->
-        stream(container.getNames()).anyMatch{name -> (name.contains(nameSpaceContainer(configuration, serviceName))) }
-      }.findAny().isPresent()}
+      .allMatch{ serviceName -> dockerContainers.stream()
+        .filter{ container ->
+          stream(container.getNames()).anyMatch{ name -> (name.contains(nameSpaceContainer(configuration, serviceName))) }
+        }
+        .findAny().isPresent()
+      }
   }
 
   def "it should remove all the services containers but keep their images"() {

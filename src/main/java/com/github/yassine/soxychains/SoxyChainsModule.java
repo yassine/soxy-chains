@@ -13,7 +13,7 @@ import com.github.yassine.soxychains.core.PluginsConfigDeserializer;
 import com.github.yassine.soxychains.plugin.Plugin;
 import com.github.yassine.soxychains.subsystem.docker.DockerModule;
 import com.github.yassine.soxychains.subsystem.layer.LayerModule;
-import com.github.yassine.soxychains.subsystem.layer.LayerService;
+import com.github.yassine.soxychains.subsystem.layer.LayerProvider;
 import com.github.yassine.soxychains.subsystem.service.ServicesConfiguration;
 import com.github.yassine.soxychains.subsystem.service.ServicesModule;
 import com.github.yassine.soxychains.subsystem.service.ServicesPlugin;
@@ -72,15 +72,15 @@ public class SoxyChainsModule extends AbstractModule {
     }
 
     private void registerLayerSubtypes(ObjectMapper mapper){
-      Set<Class<? extends LayerService>> implementations = GuiceUtils.loadSPIClasses(LayerService.class);
+      Set<Class<? extends LayerProvider>> implementations = GuiceUtils.loadSPIClasses(LayerProvider.class);
       implementations.stream()
         .filter(clazz -> !Modifier.isAbstract(clazz.getModifiers()))
-        .filter(clazz -> TypeResolver.resolveRawArguments(LayerService.class, clazz).length == 0)
+        .filter(clazz -> TypeResolver.resolveRawArguments(LayerProvider.class, clazz).length == 0)
         .forEach(clazz -> log.warn("Unable to register Class '{}'. Declarative type-erasure ?", clazz));
       implementations.stream()
         .filter(clazz -> !Modifier.isAbstract(clazz.getModifiers()))
-        .filter(clazz -> TypeResolver.resolveRawArguments(LayerService.class, clazz).length >= 1)
-        .forEach(clazz -> mapper.registerSubtypes(TypeResolver.resolveRawArguments(LayerService.class, clazz)[1]));
+        .filter(clazz -> TypeResolver.resolveRawArguments(LayerProvider.class, clazz).length >= 1)
+        .forEach(clazz -> mapper.registerSubtypes(TypeResolver.resolveRawArguments(LayerProvider.class, clazz)[0]));
     }
 
     @SuppressWarnings("unchecked")

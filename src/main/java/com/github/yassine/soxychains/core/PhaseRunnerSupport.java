@@ -24,14 +24,14 @@ class PhaseRunnerSupport implements PhaseRunner {
       .blockingSubscribe(tasks -> fromIterable(tasks)
         .flatMap(task ->
           fromFuture(supplyAsync(() -> {
-            log.info("Executing task '{}'", task.getClass());
+            log.info("Executing task '{}'", task.name());
             Boolean result = task.execute().blockingGet();
-            log.info("Successfully Executed task '{}'. Output: {}", task.getClass(), result);
+            log.info("Successfully Executed task '{}'. Output: {}", task.name(), result);
             return result;
           }))
           .subscribeOn(Schedulers.io())
           .onErrorResumeNext( (e) -> {
-            log.error("An error while executing task '{}'", task.getClass());
+            log.error("An error while executing task '{}'", task.name());
             log.error(e.getMessage(), e);
             return Observable.empty();
           })

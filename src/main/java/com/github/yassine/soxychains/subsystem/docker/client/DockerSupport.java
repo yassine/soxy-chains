@@ -5,8 +5,8 @@ import com.github.dockerjava.api.command.*;
 import com.github.dockerjava.api.model.BuildResponseItem;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Image;
+import com.github.dockerjava.api.model.Network;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
-import com.github.yassine.soxychains.subsystem.docker.NamespaceUtils;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerHostConfiguration;
 import com.google.common.base.Strings;
@@ -19,10 +19,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
+import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.labelizeNamedEntity;
 import static io.reactivex.Maybe.fromFuture;
 import static io.reactivex.Maybe.just;
 import static java.lang.String.format;
@@ -48,35 +50,47 @@ class DockerSupport implements Docker {
         .map(Maybe::just)
         .orElse(Maybe.empty())
     ) )
-    .flatMap(m -> m);
+    .flatMap(m -> m).subscribeOn(Schedulers.io());
   }
 
   @Override
   public Maybe<String> createNetwork(String networkName, Consumer<CreateNetworkCmd> beforeCreate, Consumer<String> afterCreate) {
-    return Maybe.fromFuture( supplyAsync( () ->
-        client.listNetworksCmd().exec().stream()
-          .filter(network -> network.getName().equals(networkName))
-          .findAny()
-          .map( network -> {
-              log.info(format("Network '%s' alreadyExists", network.getName()));
-              return Maybe.just(network.getId());
-            }
-          )
-          .orElse( Maybe.just(1)
-            .flatMap( value -> new SyncDockerExecutor<>(client.createNetworkCmd().withName(networkName), client.configuration())
-              .withSuccessFormatter( (v) -> format("Successfully created network '%s' to id '%s' ", networkName, v.getId()) )
-              .withErrorFormatter( (e) -> format("An occurred while creating network '%s' : '%s'", networkName, e.getMessage()) )
-              .withBeforeExecute( beforeCreate )
-              .withAfterExecute( (v) -> afterCreate.accept( v.getId() ) )
-              .execute()
-              .map(CreateNetworkResponse::getId)
-              .subscribeOn(Schedulers.io())
-            )
-          )
+    return findNetwork(networkName)
+      .map(Network::getId)
+      .map( networkID -> {
+          log.info(format("Network '%s' alreadyExists", networkName));
+          return Maybe.just(networkID);
+        }
+      )
+      .defaultIfEmpty( Maybe.just(1)
+        .flatMap( value -> new SyncDockerExecutor<>(client.createNetworkCmd(), client.configuration())
+          .withSuccessFormatter( (v) -> format("Successfully created network '%s' to id '%s' ", networkName, v.getId()) )
+          .withErrorFormatter( (e) -> format("An occurred while creating network '%s' : '%s'", networkName, e.getMessage()) )
+          .withBeforeExecute( beforeCreate.andThen(createNetworkCmd -> createNetworkCmd
+            .withName(networkName)
+            .withLabels(overrideLabels(createNetworkCmd.getLabels(), labelizeNamedEntity(networkName, dockerConfiguration))
+            )))
+          .withAfterExecute( (v) -> afterCreate.accept( v.getId() ) )
+          .execute()
+          .map(CreateNetworkResponse::getId)
         )
       )
     .flatMap(v -> v);
   }
+
+  @Override
+  public Maybe<Network> findNetwork(String networkName) {
+    return Maybe.fromFuture(CompletableFuture.supplyAsync(() ->
+      client.listNetworksCmd()
+        .exec().stream()
+        .filter(network -> network.getName().equals(networkName))
+        .findAny()
+        .map(Maybe::just)
+        .orElse(Maybe.empty()).subscribeOn(Schedulers.io())
+    ))
+    .flatMap(v -> v);
+  }
+
 
   @Override
   public Maybe<Boolean> removeNetwork(String networkName, Consumer<RemoveNetworkCmd> beforeRemove, Consumer<String> afterRemove) {
@@ -103,21 +117,23 @@ class DockerSupport implements Docker {
   }
 
   @Override
-  public Maybe<Container> startContainer(String containerName, String image, Consumer<CreateContainerCmd> beforeCreate, Consumer<String> afterCreate, Consumer<StartContainerCmd> beforeStart, Consumer<String> afterStart) {
+  public Maybe<Container> findContainer(String containerName) {
+    return fromFuture(supplyAsync(() -> client.listContainersCmd()
+      .withShowAll(true)
+      .withLabelFilter(labelizeNamedEntity(containerName, dockerConfiguration))
+      .exec()
+      .stream()
+      .findAny()
+      .map(Maybe::just)
+      .orElseGet(Maybe::empty)
+    )).flatMap(v -> v);
+  }
+
+  @Override
+  public Maybe<Container> runContainer(String containerName, String image, Consumer<CreateContainerCmd> beforeCreate, Consumer<String> afterCreate, Consumer<StartContainerCmd> beforeStart, Consumer<String> afterStart) {
     return fromFuture( supplyAsync( () -> {
         try{
-          return client.listContainersCmd()
-            .withShowAll(true)
-            .withLabelFilter(
-              ImmutableMap.of(
-                NamespaceUtils.SYSTEM_LABEL, "",
-                NamespaceUtils.NAMESPACE_LABEL, dockerConfiguration.getNamespace(),
-                NamespaceUtils.ORIGINAL_LABEL, containerName
-              )
-            )
-            .exec()
-            .stream()
-            .findAny()
+          return findContainer(containerName).map(Optional::of).defaultIfEmpty(Optional.empty()).blockingGet()
             .map(
               container -> CreateContainerStatus.of(
                 container,
@@ -133,13 +149,7 @@ class DockerSupport implements Docker {
               afterCreate.accept(containerID);
               Container container = client.listContainersCmd()
                 .withShowAll(true)
-                .withLabelFilter(
-                  ImmutableMap.of(
-                    NamespaceUtils.SYSTEM_LABEL, "",
-                    NamespaceUtils.NAMESPACE_LABEL, dockerConfiguration.getNamespace(),
-                    NamespaceUtils.ORIGINAL_LABEL, containerName
-                  )
-                )
+                .withLabelFilter(labelizeNamedEntity(containerName, dockerConfiguration))
                 .exec()
                 .stream()
                 .findAny().get();
@@ -150,8 +160,7 @@ class DockerSupport implements Docker {
           log.error(e.getMessage(), e);
           return CreateContainerStatus.of(null, format("Couldn't create container '%s' : %s", containerName, e.getMessage()), false);
         }
-      }
-      )
+      })
     ).flatMap(createContainerStatus -> {
       log.info(createContainerStatus.message());
       if(createContainerStatus.container() != null && !createContainerStatus.isStarted()){
@@ -181,18 +190,7 @@ class DockerSupport implements Docker {
   public Maybe<Boolean> stopContainer(String containerName, Consumer<StopContainerCmd> beforeStop, Consumer<String> afterStop, Consumer<RemoveContainerCmd> beforeRemove, Consumer<String> afterRemove) {
     return fromFuture( supplyAsync( () -> {
         try{
-          return client.listContainersCmd()
-            .withShowAll(true)
-            .withLabelFilter(
-              ImmutableMap.of(
-                NamespaceUtils.SYSTEM_LABEL, "",
-                NamespaceUtils.NAMESPACE_LABEL, dockerConfiguration.getNamespace()
-              )
-            )
-            .exec()
-            .stream()
-            .filter(container -> stream(container.getNames()).anyMatch(name -> name.contains(containerName)))
-            .findAny()
+          return findContainer(containerName).map(Optional::of).defaultIfEmpty(Optional.empty()).blockingGet()
             .map(container -> {
               if (container.getStatus().contains("Up")) {
                 StopContainerCmd command = client.stopContainerCmd(container.getId());
@@ -233,7 +231,7 @@ class DockerSupport implements Docker {
       }else{
         return Maybe.just(false);
       }
-    });
+    }).subscribeOn(Schedulers.io());
   }
 
   @Override
@@ -254,7 +252,7 @@ class DockerSupport implements Docker {
             .execute().blockingGet();
           return true;
         })).subscribeOn(Schedulers.io())
-      ).defaultIfEmpty(true);
+      ).defaultIfEmpty(true).subscribeOn(Schedulers.io());
   }
 
   @Override
@@ -281,6 +279,13 @@ class DockerSupport implements Docker {
 
   <CMD extends AsyncDockerCmd<CMD, ITEM>, ITEM, CALLBACK extends ResultCallback<ITEM>, RESULT> ASyncDockerExecutor<CMD, ITEM, CALLBACK, RESULT> getAsyncExecutor(CMD command, DockerHostConfiguration config){
     return new ASyncDockerExecutor<>(command, config);
+  }
+
+  private Map<String, String> overrideLabels(Map<String, String> userParams, Map<String, String> systemParams){
+    return ImmutableMap.<String, String>builder()
+      .putAll(ofNullable(userParams).orElse(ImmutableMap.of()))
+      .putAll(ofNullable(systemParams).orElse(ImmutableMap.of()))
+      .build();
   }
 
 }
