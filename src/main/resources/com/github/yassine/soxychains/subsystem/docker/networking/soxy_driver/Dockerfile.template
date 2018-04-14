@@ -1,0 +1,2 @@
+FROM yassine/soxy-driver
+ENV DRIVER_NAMESPACE ${config.namespace}

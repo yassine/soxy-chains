@@ -30,7 +30,6 @@ public class DriverStartupTask implements Task {
       .flatMapMaybe(docker -> docker.runContainer(nameSpaceContainer(dockerConfiguration, SOXY_DRIVER_NAME), nameSpaceImage(dockerConfiguration, SOXY_DRIVER_NAME),
         (createContainerCmd) -> createContainerCmd.withNetworkMode("host")
           .withPrivileged(true)
-          .withEnv(format("DRIVER_NAMESPACE=%s", dockerConfiguration.getNamespace()))
           .withBinds(
             Bind.parse("/var/run/docker.sock:/var/run/docker.sock"),
             Bind.parse("/run/docker/plugins:/run/docker/plugins")
