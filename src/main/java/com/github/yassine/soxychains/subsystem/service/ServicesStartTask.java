@@ -23,8 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.Set;
 
 import static com.github.yassine.soxychains.plugin.PluginUtils.configClassOf;
-import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.nameSpaceContainer;
-import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.nameSpaceNetwork;
+import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.*;
 import static io.reactivex.Observable.fromFuture;
 import static io.reactivex.Observable.fromIterable;
 import static java.util.Optional.ofNullable;
@@ -60,15 +59,8 @@ public class ServicesStartTask implements Task{
                     service.configureContainer(createContainer, configOf(service), dockerConfiguration);
                     createContainer.withNetworkMode(nameSpaceNetwork(dockerConfiguration, networkingConfiguration.getNetworkName()));
                     createContainer.withName(nameSpaceContainer(dockerConfiguration, configOf(service).serviceName()));
-                    createContainer.withImage(NamespaceUtils.nameSpaceImage(dockerConfiguration, configOf(service).imageName()));
-                    createContainer.withLabels(
-                      ImmutableMap.<String, String>builder()
-                        .putAll(ofNullable(createContainer.getLabels()).orElse(ImmutableMap.of()))
-                        .put(NamespaceUtils.ORIGINAL_LABEL, configOf(service).serviceName())
-                        .put(NamespaceUtils.SYSTEM_LABEL, "")
-                        .put(NamespaceUtils.NAMESPACE_LABEL, dockerConfiguration.getNamespace())
-                        .build()
-                    );
+                    createContainer.withImage(nameSpaceImage(dockerConfiguration, configOf(service).imageName()));
+                    createContainer.withLabels(labelizeNamedEntity(configOf(service).serviceName(), dockerConfiguration));
                   },
                   //The post-create hook is not used
                   (containerID) -> {},

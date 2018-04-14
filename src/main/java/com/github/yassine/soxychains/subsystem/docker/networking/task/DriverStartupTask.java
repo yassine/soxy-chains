@@ -35,7 +35,10 @@ public class DriverStartupTask implements Task {
             Bind.parse("/var/run/docker.sock:/var/run/docker.sock"),
             Bind.parse("/run/docker/plugins:/run/docker/plugins")
           )
-          .withLabels(labelizeNamedEntity(SOXY_DRIVER_NAME, dockerConfiguration)),
+          .withLabels(
+            labelizeNamedEntity(SOXY_DRIVER_NAME, dockerConfiguration)
+          )
+        ,
         (containerID) -> {},
         (startContainerCmd) -> {},
         (containerID) -> {})
