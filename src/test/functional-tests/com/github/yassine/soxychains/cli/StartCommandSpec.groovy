@@ -8,6 +8,12 @@ import com.github.yassine.soxychains.TestUtils
 import com.github.yassine.soxychains.subsystem.docker.NamespaceUtils
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration
 import com.github.yassine.soxychains.subsystem.docker.image.api.ImageRequirer
+import com.github.yassine.soxychains.subsystem.layer.AbstractLayerConfiguration
+import com.github.yassine.soxychains.subsystem.layer.LayerNode
+import com.github.yassine.soxychains.subsystem.layer.LayerProvider
+import com.github.yassine.soxychains.subsystem.layer.LayerService
+import com.github.yassine.soxychains.subsystem.layer.spi.tor.TorLayerConfiguration
+import com.github.yassine.soxychains.subsystem.layer.spi.tor.TorNodeConfiguration
 import com.github.yassine.soxychains.subsystem.service.ServicesPlugin
 import com.github.yassine.soxychains.subsystem.service.ServicesPluginConfiguration
 import com.google.common.collect.ImmutableMap
@@ -24,9 +30,7 @@ import spock.lang.Stepwise
 import java.util.stream.Collectors
 
 import static com.github.yassine.soxychains.plugin.PluginUtils.configClassOf
-import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.SOXY_DRIVER_NAME
-import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.nameSpaceContainer
-import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.nameSpaceImage
+import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.*
 import static java.util.Arrays.stream
 
 @Stepwise @UseModules(TestModule)
@@ -42,8 +46,12 @@ class StartCommandSpec extends Specification {
   private Set<ServicesPlugin> services
   @Inject
   private Injector injector
+  @Inject
+  private LayerService layerService
+  @Inject
+  private Map<Class<? extends AbstractLayerConfiguration>, LayerProvider> providers
 
-  def "it should create services docker images if missing and start required services"() {
+  def"it should create services docker images if missing and start required services"() {
     setup:
     File workDir = Files.createTempDir()
     File config  = new File(workDir, "config.yaml")
@@ -94,6 +102,51 @@ class StartCommandSpec extends Specification {
       }
   }
 
+  def "it would be able to add nodes through the api" () {
+    setup:
+    def layerNode     = new LayerNode(0, new TorNodeConfiguration())
+    def dockerClient  = TestUtils.dockerClient(configuration.getHosts().get(0))
+    def layerProvider = providers.get(TorLayerConfiguration.class)
+    Class<? extends LayerProvider> providerClass = (Class<? extends LayerProvider>) layerProvider.getClass()
+    def filters       = filterLayerNode(providerClass, 0, configuration)
+
+    when:
+    layerService.add(layerNode).blockingGet()
+
+    then:
+    dockerClient.listContainersCmd()
+      .withLabelFilter(filters)
+      .exec().stream().findAny()
+      .isPresent()
+
+  }
+
+  def "it would be able to remove nodes through the api" () {
+    setup:
+    def layerNode     = new LayerNode(0, new TorNodeConfiguration())
+    def dockerClient  = TestUtils.dockerClient(configuration.getHosts().get(0))
+    def layerProvider = providers.get(TorLayerConfiguration.class)
+    Class<? extends LayerProvider> providerClass = (Class<? extends LayerProvider>) layerProvider.getClass()
+    def filters       = filterLayerNode(providerClass, 0, configuration)
+    //adding some nodes
+    layerService.add(layerNode).blockingGet()
+    layerService.add(layerNode).blockingGet()
+
+    def size = dockerClient.listContainersCmd()
+                .withLabelFilter(filters)
+                .exec().size()
+
+    when:
+    layerService.remove(layerNode).blockingGet()
+
+    then:
+    //the number of nodes should decrease by one
+    dockerClient.listContainersCmd()
+      .withLabelFilter(filters)
+      .exec().size() == size - 1
+
+  }
+
   def "it should remove all the services containers but keep their images"() {
     setup:
     File workDir = Files.createTempDir()
@@ -105,6 +158,11 @@ class StartCommandSpec extends Specification {
     def dockerImages     = dockerClient.listImagesCmd().exec()
     def dockerContainers = dockerClient.listContainersCmd().withLabelFilter(ImmutableMap.of(NamespaceUtils.SYSTEM_LABEL, "",NamespaceUtils.NAMESPACE_LABEL, configuration.getNamespace()))
       .exec().stream().filter{container -> container.getStatus().contains("Up")}.collect(Collectors.<Container>toList())
+    def layerNode     = new LayerNode(0, new TorNodeConfiguration())
+    def layerProvider = providers.get(TorLayerConfiguration.class)
+    Class<? extends LayerProvider> providerClass = (Class<? extends LayerProvider>) layerProvider.getClass()
+    def filters       = filterLayerNode(providerClass, 0, configuration)
+    layerService.add(layerNode)
 
     expect:
     //all the required images still exist
@@ -123,6 +181,11 @@ class StartCommandSpec extends Specification {
       .allMatch{ serviceName -> dockerContainers.stream().allMatch{ container ->
         stream(container.getNames()).allMatch{name -> !(name.contains(nameSpaceContainer(configuration, serviceName))) }
       }}
+    //all nodes have been removed
+    !dockerClient.listContainersCmd()
+      .withLabelFilter(filters)
+      .exec().stream().findAny()
+      .isPresent()
   }
 
   static class TestModule extends AbstractModule{

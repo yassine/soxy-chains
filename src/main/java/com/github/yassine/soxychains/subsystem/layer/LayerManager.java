@@ -15,7 +15,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.labelizeLayerNode;
+import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.filterLayerNode;
 import static io.reactivex.Observable.fromIterable;
 
 @RequiredArgsConstructor(onConstructor = @__(@Inject), access = AccessLevel.PUBLIC)
@@ -47,7 +47,7 @@ public class LayerManager {
     return Single.fromFuture(CompletableFuture.supplyAsync(() -> {
       int nodeCount = client.listContainersCmd()
         .withLabelFilter(
-          labelizeLayerNode(provider.getClass(), layerIndex, soxyChainsConfiguration.getDocker())
+          filterLayerNode(provider.getClass(), layerIndex, soxyChainsConfiguration.getDocker())
         ).exec().size();
       int maxNodeCount = allocation(soxyChainsConfiguration.getDocker(), layerConfiguration);
       return nodeCount < maxNodeCount;

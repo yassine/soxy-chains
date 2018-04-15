@@ -4,7 +4,6 @@ import com.github.dockerjava.api.model.Bind;
 import com.github.yassine.soxychains.core.Phase;
 import com.github.yassine.soxychains.core.RunOn;
 import com.github.yassine.soxychains.core.Task;
-import com.github.yassine.soxychains.subsystem.docker.NamespaceUtils;
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
 import com.google.auto.service.AutoService;
@@ -15,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.*;
 import static io.reactivex.Observable.fromIterable;
-import static java.lang.String.format;
 
 @AutoService(Task.class)
 @RunOn(Phase.START) @RequiredArgsConstructor(onConstructor = @__(@Inject), access = AccessLevel.PUBLIC)

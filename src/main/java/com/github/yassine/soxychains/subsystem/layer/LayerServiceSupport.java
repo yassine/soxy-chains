@@ -16,6 +16,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.*;
@@ -40,7 +41,7 @@ class LayerServiceSupport implements LayerService {
         Maybe<Network> network = docker.findNetwork(nameSpaceLayerNetwork(dockerConfiguration, node.getLayerIndex()));
         String random = randomName();
         return docker.runContainer(
-          namespaceLayerNode(dockerConfiguration, node.getLayerIndex(), randomName()),
+          namespaceLayerNode(dockerConfiguration, node.getLayerIndex(), random),
           nameSpaceImage(dockerConfiguration, provider.image().getName()),
           (createContainerCmd) -> {
             provider.configureNode(createContainerCmd, node.getNodeConfiguration(), layerConfiguration);
@@ -48,8 +49,8 @@ class LayerServiceSupport implements LayerService {
               .withNetworkMode(network.blockingGet().getName())
               .withLabels(
                 ImmutableMap.<String,String>builder()
-                  .putAll(labelizeLayerNode(provider.getClass(), node.getLayerIndex(), soxyChainsConfiguration.getDocker()))
-                  .put(RANDOM_LABEL, random)
+                  .putAll(Optional.ofNullable(createContainerCmd.getLabels()).orElse(ImmutableMap.of()))
+                  .putAll(labelizeLayerNode(provider.getClass(), node.getLayerIndex(), soxyChainsConfiguration.getDocker(), random))
                   .build()
               );
           },
@@ -68,7 +69,7 @@ class LayerServiceSupport implements LayerService {
     LayerProvider provider = providers.get(layerConfiguration.getClass());
     return Observable.fromIterable(dockerProvider.clients())
       .flatMap(docker ->
-        fromFuture(supplyAsync(() -> docker.listContainersCmd().withLabelFilter(labelizeLayerNode(provider.getClass(), node.getLayerIndex(), dockerConfiguration)).exec()))
+        fromFuture(supplyAsync(() -> docker.listContainersCmd().withLabelFilter(filterLayerNode(provider.getClass(), node.getLayerIndex(), dockerConfiguration)).exec()))
           .subscribeOn(Schedulers.io())
           .flatMap(Observable::fromIterable)
           .filter(container -> provider.matches(container, node.getNodeConfiguration(), layerConfiguration))
@@ -86,7 +87,7 @@ class LayerServiceSupport implements LayerService {
   }
 
   private String randomName(){
-    return UUID.randomUUID().toString().substring(0, 10);
+    return UUID.randomUUID().toString().substring(0, 8);
   }
 
 }

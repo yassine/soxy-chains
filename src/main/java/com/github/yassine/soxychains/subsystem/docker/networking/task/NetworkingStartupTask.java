@@ -9,16 +9,15 @@ import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
 import com.github.yassine.soxychains.subsystem.docker.networking.NetworkingConfiguration;
 import com.google.auto.service.AutoService;
-import com.google.common.base.Joiner;
 import com.google.inject.Inject;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import org.apache.commons.lang.StringUtils;
 
-import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.nameSpaceLayerNetwork;
-import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.nameSpaceNetwork;
+import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.*;
 import static io.reactivex.Observable.fromIterable;
 
 @RunOn(Phase.START)
@@ -31,15 +30,16 @@ public class NetworkingStartupTask implements Task{
   private final NetworkingConfiguration networkingConfiguration;
   private final SoxyChainsConfiguration soxyChainsConfiguration;
 
-  @Override
+  @Override @SneakyThrows
   public Single<Boolean> execute() {
+    Thread.sleep(5000L);
     return Observable.concat(
       fromIterable(soxyChainsConfiguration.getLayers())
         .flatMap(layerConfiguration ->
           fromIterable(dockerProvider.dockers())
             .flatMapMaybe(docker -> docker.createNetwork(nameSpaceLayerNetwork(dockerConfiguration, soxyChainsConfiguration.getLayers().indexOf(layerConfiguration)),
               (createNetworkCmd) -> {
-                createNetworkCmd.withDriver(Joiner.on("__").join(dockerConfiguration.getNamespace(),"soxy-driver"));
+                createNetworkCmd.withDriver(soxyDriverName(dockerConfiguration));
               },
               (networkID) -> {})
             )
@@ -48,7 +48,7 @@ public class NetworkingStartupTask implements Task{
         .flatMapMaybe(docker -> docker.createNetwork(
           nameSpaceNetwork(dockerConfiguration, networkingConfiguration.getNetworkName()),
           createNetworkCmd -> {
-            createNetworkCmd.withDriver(Joiner.on("__").join(dockerConfiguration.getNamespace(),"soxy-driver"));
+            createNetworkCmd.withDriver(soxyDriverName(dockerConfiguration));
           },
           name -> {}
         ).map(StringUtils::isNotEmpty).defaultIfEmpty(false))

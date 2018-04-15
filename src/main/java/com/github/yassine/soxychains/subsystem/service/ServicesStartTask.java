@@ -5,13 +5,11 @@ import com.github.yassine.artifacts.guice.scheduling.TaskScheduler;
 import com.github.yassine.soxychains.core.Phase;
 import com.github.yassine.soxychains.core.RunOn;
 import com.github.yassine.soxychains.core.Task;
-import com.github.yassine.soxychains.subsystem.docker.NamespaceUtils;
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
 import com.github.yassine.soxychains.subsystem.docker.networking.NetworkingConfiguration;
 import com.github.yassine.soxychains.subsystem.docker.networking.task.NetworkingStartupTask;
 import com.google.auto.service.AutoService;
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import io.reactivex.Single;
@@ -26,7 +24,6 @@ import static com.github.yassine.soxychains.plugin.PluginUtils.configClassOf;
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.*;
 import static io.reactivex.Observable.fromFuture;
 import static io.reactivex.Observable.fromIterable;
-import static java.util.Optional.ofNullable;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 @Slf4j @DependsOn(NetworkingStartupTask.class)

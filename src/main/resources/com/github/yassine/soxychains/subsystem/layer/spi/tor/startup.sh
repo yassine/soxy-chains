@@ -31,4 +31,4 @@ then
   echo "EntryNodes ${ENTRY_NODES}" >> ${TOR_CONFIG_FILE}
 fi
 
-tor -c ${TOR_CONFIG_FILE}
+tor -f ${TOR_CONFIG_FILE}

@@ -21,7 +21,6 @@ public class NamespaceUtils {
   public static final String RANDOM_LABEL         = SYSTEM_LABEL+".random";
   public static final String LAYER_PROVIDER_LABEL = SYSTEM_LABEL+".layer.provider";
   public static final String LAYER_PROVIDER_INDEX = SYSTEM_LABEL+".layer.index";
-  public static final String REPLICA_LABEL        = SYSTEM_LABEL+".replica_num";
 
   public static String nameSpaceImage(DockerConfiguration configuration, String userImageName){
     return userImageName.startsWith(Joiner.on(IMAGE_SEPARATOR).join(SYSTEM_NAMESPACE, configuration.getNamespace()))
@@ -49,20 +48,42 @@ public class NamespaceUtils {
       : Joiner.on(CONTAINER_SEPARATOR).join(SYSTEM_NAMESPACE, configuration.getNamespace(), userContainerName);
   }
 
-  public static Map<String, String> labelizeLayerNode(Class<? extends LayerProvider> providerClass, int layerLevel, DockerConfiguration dockerConfiguration){
+  public static Map<String, String> labelizeLayerNode(Class<? extends LayerProvider> providerClass, int layerLevel,
+                                                      DockerConfiguration dockerConfiguration, String random)
+  {
     return ImmutableMap.of(
-      NamespaceUtils.LAYER_PROVIDER_INDEX, layerLevel+"",
-      NamespaceUtils.LAYER_PROVIDER_LABEL, providerClass.getName(),
-      NamespaceUtils.SYSTEM_LABEL, "",
-      NamespaceUtils.NAMESPACE_LABEL, dockerConfiguration.getNamespace()
+      LAYER_PROVIDER_INDEX, layerLevel+"",
+      LAYER_PROVIDER_LABEL, providerClass.getName(),
+      SYSTEM_LABEL, "",
+      NAMESPACE_LABEL, dockerConfiguration.getNamespace(),
+      RANDOM_LABEL, random
+    );
+  }
+
+  public static Map<String, String> filterLayerNode(Class<? extends LayerProvider> providerClass, DockerConfiguration dockerConfiguration)
+  {
+    return ImmutableMap.of(
+      LAYER_PROVIDER_LABEL, providerClass.getName(),
+      SYSTEM_LABEL, "",
+      NAMESPACE_LABEL, dockerConfiguration.getNamespace()
+    );
+  }
+
+  public static Map<String, String> filterLayerNode(Class<? extends LayerProvider> providerClass, int layerLevel, DockerConfiguration dockerConfiguration)
+  {
+    return ImmutableMap.of(
+      LAYER_PROVIDER_INDEX, layerLevel+"",
+      LAYER_PROVIDER_LABEL, providerClass.getName(),
+      SYSTEM_LABEL, "",
+      NAMESPACE_LABEL, dockerConfiguration.getNamespace()
     );
   }
 
   public static Map<String, String> labelizeNamedEntity(String name, DockerConfiguration dockerConfiguration){
     return ImmutableMap.of(
-      NamespaceUtils.ORIGINAL_LABEL, name,
-      NamespaceUtils.SYSTEM_LABEL, "",
-      NamespaceUtils.NAMESPACE_LABEL, dockerConfiguration.getNamespace()
+      ORIGINAL_LABEL, name,
+      SYSTEM_LABEL, "",
+      NAMESPACE_LABEL, dockerConfiguration.getNamespace()
     );
   }
 
