@@ -5,9 +5,9 @@ import com.github.yassine.soxychains.subsystem.docker.image.RequiresImage;
 import com.github.yassine.soxychains.subsystem.service.ServicesPlugin;
 import com.google.auto.service.AutoService;
 
-import static com.github.yassine.soxychains.subsystem.service.dns.DnsConfiguration.ID;
+import static com.github.yassine.soxychains.subsystem.service.dns.DnsConfiguration.DNS_CONFIG_ID;
 
-@RequiresImage(name = ID, resourceRoot = "classpath://com/github/yassine/soxychains/subsystem/service/"+DnsConfiguration.ID)
-@ConfigKey(ID) @AutoService(ServicesPlugin.class)
+@RequiresImage(name = DNS_CONFIG_ID, resourceRoot = "classpath://com/github/yassine/soxychains/subsystem/service/"+DnsConfiguration.DNS_CONFIG_ID)
+@ConfigKey(DNS_CONFIG_ID) @AutoService(ServicesPlugin.class)
 public class DnsService implements ServicesPlugin<DnsConfiguration> {
 }

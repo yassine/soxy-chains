@@ -17,9 +17,9 @@ import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
+import static com.github.yassine.soxychains.core.FluentUtils.runAndGet;
+import static com.github.yassine.soxychains.core.FluentUtils.runAndGetAsSingle;
 import static io.reactivex.Observable.fromIterable;
-import static io.reactivex.Single.fromFuture;
-import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 @Slf4j
 @Command(name = "status", description = "displays the status of the docker hosts")
@@ -37,20 +37,11 @@ public class Status extends ConfigurableCommand{
   public void run() {
     validateOptions();
     fromIterable(dockerProvider.clients())
-      .flatMapSingle(client -> fromFuture(supplyAsync(()->{
-          try{
-            client.pingCmd().exec();
-            return new HostStatus(client.configuration().getUri().getHost(), true);
-          }catch (Exception e){
-            log.error(e.getMessage());
-            return new HostStatus(client.configuration().getUri().getHost(), false);
-          }
-        }))
+      .flatMapSingle( client -> runAndGetAsSingle( () -> client.pingCmd().exec(), new HostStatus(client.configuration().getUri().getHost(), true) )
+        .onErrorReturn( exception -> runAndGet(() -> log.error(exception.getMessage()), new HostStatus(client.configuration().getUri().getHost(), false)))
         .subscribeOn(Schedulers.io())
       ).collectInto(new ArrayList<>(), ArrayList::add)
-    .toObservable().blockingSubscribe(statuses -> {
-      objectMapper.writeValue(outputStream(), statuses);
-    });
+    .toObservable().blockingSubscribe(statuses -> objectMapper.writeValue(outputStream(), statuses));
   }
 
   @SneakyThrows

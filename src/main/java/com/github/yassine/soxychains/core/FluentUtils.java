@@ -5,7 +5,9 @@ import io.reactivex.Single;
 
 import java.util.concurrent.CompletableFuture;
 
-public class Fluencies {
+public class FluentUtils {
+
+  private FluentUtils() {}
 
   public static <VALUE> VALUE runAndGet(Runnable runnable, VALUE returnValue){
     runnable.run();

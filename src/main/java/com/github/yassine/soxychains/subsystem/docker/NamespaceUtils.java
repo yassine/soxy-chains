@@ -10,6 +10,8 @@ import java.util.Map;
 
 public class NamespaceUtils {
 
+  private NamespaceUtils() {}
+
   private static final String SYSTEM_NAMESPACE    = "soxy_chains";
   private static final String IMAGE_SEPARATOR     = "__";
   private static final String CONTAINER_SEPARATOR = "__";
@@ -52,7 +54,7 @@ public class NamespaceUtils {
                                                       DockerConfiguration dockerConfiguration, String random)
   {
     return ImmutableMap.of(
-      LAYER_PROVIDER_INDEX, layerLevel+"",
+      LAYER_PROVIDER_INDEX, Integer.toString(layerLevel),
       LAYER_PROVIDER_LABEL, providerClass.getName(),
       SYSTEM_LABEL, "",
       NAMESPACE_LABEL, dockerConfiguration.getNamespace(),
@@ -72,7 +74,7 @@ public class NamespaceUtils {
   public static Map<String, String> filterLayerNode(Class<? extends LayerProvider> providerClass, int layerLevel, DockerConfiguration dockerConfiguration)
   {
     return ImmutableMap.of(
-      LAYER_PROVIDER_INDEX, layerLevel+"",
+      LAYER_PROVIDER_INDEX, Integer.toString(layerLevel),
       LAYER_PROVIDER_LABEL, providerClass.getName(),
       SYSTEM_LABEL, "",
       NAMESPACE_LABEL, dockerConfiguration.getNamespace()

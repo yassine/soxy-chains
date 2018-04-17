@@ -61,7 +61,7 @@ class InstallCommandSpec extends Specification {
       .flatMap{requirer -> requirer.require()}
       .map({requiredImage -> requiredImage.getName()})
       .map({requiredImage -> dockerImages.stream().allMatch{ repoImage ->
-        stream(repoImage.getRepoTags()).noneMatch{tag -> tag.contains(nameSpaceImage(configuration, requiredImage))}
+        stream((String []) repoImage.getRepoTags()).noneMatch{tag -> tag.contains(nameSpaceImage(configuration, requiredImage))}
       }})
       .reduce(true, { a, b -> a && b })
       .blockingGet()

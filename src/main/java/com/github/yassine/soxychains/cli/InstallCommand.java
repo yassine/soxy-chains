@@ -13,7 +13,7 @@ public class InstallCommand extends ConfigurableCommand{
 
   @Override
   public void run() {
-    phaseRunner.runPhase(Phase.INSTALL);
+    phaseRunner.runPhase(Phase.INSTALL).blockingGet();
   }
 
 }

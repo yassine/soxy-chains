@@ -25,14 +25,9 @@ public class DriverStopTask implements Task{
   @Override
   public Single<Boolean> execute() {
     return fromIterable(dockerProvider.dockers())
-      .flatMapMaybe(docker -> docker.stopContainer(nameSpaceContainer(dockerConfiguration, SOXY_DRIVER_NAME),
-          (stopContainerCommand) -> {},
-          (containerID) -> {},
-          (startContainerCmd) -> {},
-          (containerID) -> {}
-        )
-        .map(c -> true)
-        .defaultIfEmpty(true))
+      .flatMapMaybe(docker -> docker.stopContainer(nameSpaceContainer(dockerConfiguration, SOXY_DRIVER_NAME))
+                                .map(c -> true)
+                                .defaultIfEmpty(true))
       .reduce(true, (a,b) -> a && b);
   }
 

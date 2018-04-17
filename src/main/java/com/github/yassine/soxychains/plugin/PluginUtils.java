@@ -5,6 +5,9 @@ import lombok.SneakyThrows;
 import static net.jodah.typetools.TypeResolver.resolveRawArgument;
 
 public class PluginUtils {
+
+  private PluginUtils() {}
+
   @SneakyThrows
   public static <CONFIG extends PluginConfiguration> CONFIG defaultConfig(Class <? extends Plugin> pluginContract){
     return (CONFIG) (resolveRawArgument(Plugin.class, pluginContract)).newInstance();

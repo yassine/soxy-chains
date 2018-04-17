@@ -51,7 +51,7 @@ class StartCommandSpec extends Specification {
   @Inject
   private Map<Class<? extends AbstractLayerConfiguration>, LayerProvider> providers
 
-  def"it should create services docker images if missing and start required services"() {
+  def "it should create services docker images if missing and start required services"() {
     setup:
     File workDir = Files.createTempDir()
     File config  = new File(workDir, "config.yaml")

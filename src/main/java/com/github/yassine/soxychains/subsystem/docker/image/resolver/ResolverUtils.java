@@ -9,11 +9,18 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.Map;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 import static com.machinezoo.noexception.Exceptions.sneak;
 
 @Slf4j
-public class TarUtils {
+public class ResolverUtils {
+
+  private ResolverUtils() {}
+
+  static final Pattern TEMPLATE_FILENAME_PATTERN = Pattern.compile("(\\.template)|(\\.tpl)$");
+  static final Predicate<String> DEFAULT_INCLUDE_PREDICATE  = path -> !path.endsWith(".class");
 
   public static InputStream createTARArchive(Map<String, String> entries){
     ByteArrayOutputStream bao  = new ByteArrayOutputStream();

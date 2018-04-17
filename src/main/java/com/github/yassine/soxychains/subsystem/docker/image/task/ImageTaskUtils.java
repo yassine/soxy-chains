@@ -9,6 +9,8 @@ import java.util.Set;
 
 class ImageTaskUtils {
 
+  private ImageTaskUtils() {}
+
   static Observable<DockerImage> getNecessaryImages(Set<ImageRequirer> imageRequirer) {
     return Observable.fromIterable(imageRequirer)
       .flatMap(ImageRequirer::require)

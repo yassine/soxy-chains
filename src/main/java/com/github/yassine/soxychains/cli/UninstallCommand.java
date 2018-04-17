@@ -13,7 +13,8 @@ public class UninstallCommand extends ConfigurableCommand{
 
   @Override
   public void run() {
-    phaseRunner.runPhase(Phase.UNINSTALL);
+    phaseRunner.runPhase(Phase.STOP).blockingGet();
+    phaseRunner.runPhase(Phase.UNINSTALL).blockingGet();
   }
 
 }

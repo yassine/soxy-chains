@@ -1,7 +1,7 @@
 package com.github.yassine.soxychains.core;
 
 import com.google.inject.Inject;
-import io.reactivex.Observable;
+import io.reactivex.Single;
 import io.reactivex.schedulers.Schedulers;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -19,24 +19,23 @@ class PhaseRunnerSupport implements PhaseRunner {
   private final TaskScheduleProvider taskScheduleProvider;
 
   @SneakyThrows
-  public void runPhase(Phase phase) {
-    fromIterable(taskScheduleProvider.get(phase))
-      .blockingSubscribe(tasks -> fromIterable(tasks)
-        .flatMap(task ->
-          fromFuture(supplyAsync(() -> {
-            log.info("Executing task '{}'", task.name());
-            Boolean result = task.execute().blockingGet();
-            log.info("Successfully Executed task '{}'. Output: {}", task.name(), result);
-            return result;
-          }))
-          .subscribeOn(Schedulers.io())
-          .onErrorResumeNext( (e) -> {
-            log.error("An error while executing task '{}'", task.name());
-            log.error(e.getMessage(), e);
-            return Observable.empty();
-          })
-        ).blockingSubscribe()
-      );
+  public Single<Boolean> runPhase(Phase phase) {
+    return fromIterable(taskScheduleProvider.get(phase))
+      .flatMap(tasksWave -> fromFuture(supplyAsync(() -> fromIterable(tasksWave)
+          .flatMapSingle(task ->
+            Single.fromFuture(supplyAsync(() -> {
+              log.info("Executing task '{}'", task.name());
+              Boolean result = task.execute().blockingGet();
+              log.info("Successfully Executed task '{}'. Output: {}", task.name(), result);
+              return result;
+            }))
+            .subscribeOn(Schedulers.io())
+            .doOnError( exception -> {
+              log.error("An error while executing task '{}'", task.name());
+              log.error(exception.getMessage(), exception);
+            }).subscribeOn(Schedulers.io())
+          ).reduce(true, (a, b) -> a && b).blockingGet())))
+      .reduce(true, (a, b) -> a && b);
   }
 
 }

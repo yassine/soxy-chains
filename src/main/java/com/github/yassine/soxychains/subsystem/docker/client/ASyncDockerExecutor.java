@@ -5,7 +5,6 @@ import com.github.dockerjava.api.command.AsyncDockerCmd;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerHostConfiguration;
 import com.google.common.base.Preconditions;
 import io.reactivex.Maybe;
-import io.reactivex.schedulers.Schedulers;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Optional;
@@ -30,8 +29,8 @@ class ASyncDockerExecutor<CMD_T extends AsyncDockerCmd<CMD_T, A_RES_T>, A_RES_T,
   public ASyncDockerExecutor(CMD_T cmd, DockerHostConfiguration configuration) {
     this.cmd = cmd;
     this.configuration = configuration;
-    this.successFormatter = (t) -> format("Successfully executed command '%s'", cmd.getClass().getSimpleName());
-    this.errorFormatter = (e) -> format("Error occurred while executing command '%s' : %s", cmd.getClass().getSimpleName(), e.getMessage());
+    this.successFormatter = result -> format("Successfully executed command '%s'", cmd.getClass().getSimpleName());
+    this.errorFormatter = exception -> format("Error occurred while executing command '%s' : %s", cmd.getClass().getSimpleName(), exception.getMessage());
   }
 
   public Maybe<RESULT> execute(){
@@ -54,7 +53,7 @@ class ASyncDockerExecutor<CMD_T extends AsyncDockerCmd<CMD_T, A_RES_T>, A_RES_T,
         log.error(errorFormatter.apply(e));
         return Maybe.<RESULT>empty();
       }
-    })).flatMap(v -> v).subscribeOn(Schedulers.io());
+    })).flatMap(v -> v);
   }
 
   Function<CALLBACK, RESULT> getResultExtractor(){

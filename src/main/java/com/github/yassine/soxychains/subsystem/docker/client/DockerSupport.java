@@ -7,11 +7,12 @@ import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.Network;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
+import com.github.yassine.soxychains.core.SoxyChainsException;
 import com.github.yassine.soxychains.subsystem.docker.NamespaceUtils;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerHostConfiguration;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import io.reactivex.Maybe;
 import io.reactivex.schedulers.Schedulers;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +26,10 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
+import static com.github.yassine.soxychains.core.FluentUtils.runAndGet;
+import static com.github.yassine.soxychains.core.FluentUtils.runAndGetAsMaybe;
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.labelizeNamedEntity;
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static io.reactivex.Maybe.fromFuture;
 import static io.reactivex.Maybe.just;
 import static java.lang.String.format;
@@ -41,12 +45,12 @@ class DockerSupport implements Docker {
 
   @Override
   public Maybe<Image> findImageByTag(String imageTag) {
-    return Maybe.fromFuture( supplyAsync( () ->
+    return fromFuture( supplyAsync( () ->
       client.listImagesCmd()
         .exec()
         .stream()
         .filter(image -> stream(ofNullable(image.getRepoTags()).orElse(new String[0]))
-                          .anyMatch((v)-> !Strings.isNullOrEmpty(imageTag) && v.contains(imageTag)))
+                          .anyMatch( repoTag-> !isNullOrEmpty(imageTag) && repoTag.contains(imageTag)))
         .findAny()
         .map(Maybe::just)
         .orElse(Maybe.empty())
@@ -58,30 +62,27 @@ class DockerSupport implements Docker {
   public Maybe<String> createNetwork(String networkName, Consumer<CreateNetworkCmd> beforeCreate, Consumer<String> afterCreate) {
     return findNetwork(networkName)
       .map(Network::getId)
-      .map( networkID -> {
-          log.info(format("Network '%s' alreadyExists", networkName));
-          return Maybe.just(networkID);
-        }
-      )
-      .defaultIfEmpty( Maybe.just(1)
+      .map(networkID -> runAndGet(() -> log.info(format("Network '%s' alreadyExists", networkName)), just(networkID)))
+      .defaultIfEmpty( just(1)
         .flatMap( value -> new SyncDockerExecutor<>(client.createNetworkCmd(), client.configuration())
-          .withSuccessFormatter( (v) -> format("Successfully created network '%s' to id '%s' ", networkName, v.getId()) )
-          .withErrorFormatter( (e) -> format("An occurred while creating network '%s' : '%s'", networkName, e.getMessage()) )
-          .withBeforeExecute( beforeCreate.andThen(createNetworkCmd -> createNetworkCmd
-            .withName(networkName)
-            .withLabels(overrideLabels(createNetworkCmd.getLabels(), labelizeNamedEntity(networkName, dockerConfiguration))
-            )))
-          .withAfterExecute( (v) -> afterCreate.accept( v.getId() ) )
+          .withSuccessFormatter( network -> format("Successfully created network '%s' to id '%s' ", networkName, network.getId()) )
+          .withErrorFormatter( exception -> format("An occurred while creating network '%s' : '%s'", networkName, exception.getMessage()) )
+          .withBeforeExecute( beforeCreate.andThen( createNetworkCmd ->
+            createNetworkCmd
+              .withName(networkName)
+              .withLabels(overrideLabels(createNetworkCmd.getLabels(), labelizeNamedEntity(networkName, dockerConfiguration))
+          )))
+          .withAfterExecute( networkResponse -> afterCreate.accept( networkResponse.getId() ) )
           .execute()
           .map(CreateNetworkResponse::getId)
         )
       )
-    .flatMap(v -> v);
+      .flatMap(v -> v);
   }
 
   @Override
   public Maybe<Network> findNetwork(String networkName) {
-    return Maybe.fromFuture(CompletableFuture.supplyAsync(() ->
+    return fromFuture(CompletableFuture.supplyAsync(() ->
       client.listNetworksCmd()
         .exec().stream()
         .filter(network -> network.getName().equals(networkName))
@@ -95,26 +96,28 @@ class DockerSupport implements Docker {
 
   @Override
   public Maybe<Boolean> removeNetwork(String networkName, Consumer<RemoveNetworkCmd> beforeRemove, Consumer<String> afterRemove) {
-    return Maybe.fromFuture(supplyAsync(() ->
+    return fromFuture(supplyAsync(() ->
       client.listNetworksCmd().exec().stream()
         .filter(network -> network.getName().equals(networkName))
         .findAny()
-        .map(network -> Maybe.just(1)
+        .map(network -> just(1)
           .flatMap(v -> new SyncDockerExecutor<>(client.removeNetworkCmd(network.getId()), client.configuration() )
-            .withSuccessFormatter( (voi) -> format("Successfully removed network '%s' with id '%s' ", networkName, network.getId()) )
-            .withErrorFormatter( (e) -> format("An occurred while removing network '%s' : '%s'", networkName, e.getMessage()) )
+            .withSuccessFormatter( vd -> format("Successfully removed network '%s' with id '%s' ", networkName, network.getId()) )
+            .withErrorFormatter( exception -> format("An occurred while removing network '%s' : '%s'", networkName, exception.getMessage()) )
             .withBeforeExecute(beforeRemove)
-            .withAfterExecute((voi) -> afterRemove.accept( networkName ))
+            .withAfterExecute( vd -> afterRemove.accept( networkName ))
             .execute()
             .subscribeOn(Schedulers.io()))
           .map(v -> true)
         )
-        .orElseGet(() -> {
-          log.info(format("Cannot remove network '%s'. The network doesn't exist", networkName));
-          return Maybe.just(false);
-        })
+        .orElseGet(() -> runAndGet(() -> log.info(format("Cannot remove network '%s'. The network doesn't exist", networkName)), just(false)))
     ))
     .flatMap(v -> v);
+  }
+
+  @Override
+  public Maybe<Boolean> removeNetwork(String networkName) {
+    return removeNetwork(networkName, removeNetworkCmd -> {}, id -> {});
   }
 
   @Override
@@ -165,7 +168,7 @@ class DockerSupport implements Docker {
                 .exec()
                 .stream()
                 .filter(container1 -> Arrays.stream(container1.getNames()).anyMatch(name -> name.contains(containerName)))
-                .findAny().get();
+                .findAny().orElseThrow(() -> new SoxyChainsException(format("Unable to find container with name : %s", containerName)));
               return CreateContainerStatus.of(container, format("Successfully created container '%s' with id '%s'.", containerName, containerID), false);
             });
         }catch (Exception e){
@@ -183,7 +186,7 @@ class DockerSupport implements Docker {
           command.exec();
           log.info("Successfully started container '{}'", Arrays.toString(createContainerStatus.container().getNames()));
           afterStart.accept(containerName);
-          return Maybe.just(createContainerStatus.container());
+          return just(createContainerStatus.container());
         }catch (Exception e){
           log.error(format("Couldn't start container '%s' : %s", containerName, e.getMessage()));
           log.error(e.getMessage(), e);
@@ -191,12 +194,17 @@ class DockerSupport implements Docker {
         }
       }else if(createContainerStatus.container() != null && createContainerStatus.isStarted()){
         log.info(format("Skipping starting container '%s' as it is already started.", containerName));
-        return Maybe.just(createContainerStatus.container());
+        return just(createContainerStatus.container());
       }
       else{
         return Maybe.empty();
       }
     });
+  }
+
+  @Override
+  public Maybe<Container> runContainer(String containerName, String image, Consumer<CreateContainerCmd> beforeCreate) {
+    return runContainer(containerName, image, beforeCreate, afterCreate -> {}, beforeStart -> {}, afterStart -> {});
   }
 
   @Override
@@ -235,16 +243,21 @@ class DockerSupport implements Docker {
           command.exec();
           log.info(format("Successfully removed container '%s'.", containerName));
           afterRemove.accept(containerName);
-          return Maybe.just(true);
+          return just(true);
         }catch (Exception e){
           log.error(format("Couldn't remove container '%s' : %s", containerName, e.getMessage()));
           log.error(e.getMessage(), e);
-          return Maybe.just(false);
+          return just(false);
         }
       }else{
-        return Maybe.just(false);
+        return just(false);
       }
     }).subscribeOn(Schedulers.io());
+  }
+
+  @Override
+  public Maybe<Boolean> stopContainer(String containerName) {
+    return stopContainer(containerName, beforeStop -> {}, afterStop -> {}, beforeRemove -> {}, afterRemove -> {});
   }
 
   @Override
@@ -256,16 +269,13 @@ class DockerSupport implements Docker {
   public Maybe<Boolean> removeImage(String tag, Consumer<RemoveImageCmd> beforeRemove, Consumer<String> afterRemove) {
     return findImageByTag(tag)
       .flatMap(image ->
-        Maybe.fromFuture(CompletableFuture.supplyAsync(()->{
-          new SyncDockerExecutor<>(client.removeImageCmd(image.getId()).withForce(true), client.configuration() )
-            .withSuccessFormatter( (v) -> format("Successfully removed image '%s'", tag) )
-            .withErrorFormatter( (e) -> format("An occurred before removing image '%s' : '%s'", tag, e.getMessage()) )
-            .withBeforeExecute(beforeRemove)
-            .withAfterExecute((v) -> afterRemove.accept( tag ))
-            .execute().blockingGet();
-          return true;
-        })).subscribeOn(Schedulers.io())
-      ).defaultIfEmpty(true).subscribeOn(Schedulers.io());
+        runAndGetAsMaybe( () -> new SyncDockerExecutor<>(client.removeImageCmd(image.getId()).withForce(true), client.configuration() )
+          .withSuccessFormatter( v -> format("Successfully removed image '%s'", tag) )
+          .withErrorFormatter( exception -> format("An occurred before removing image '%s' : '%s'", tag, exception.getMessage()) )
+          .withBeforeExecute( beforeRemove )
+          .withAfterExecute( v -> afterRemove.accept( tag ))
+          .execute().blockingGet(), true).subscribeOn(Schedulers.io())
+      ).defaultIfEmpty(true);
   }
 
   @Override
@@ -276,9 +286,9 @@ class DockerSupport implements Docker {
       .flatMap(present -> present.map(Image::getId)
         .map(Maybe::just)
         .orElseGet(() -> just(1)
-          .flatMap(v -> (this.<BuildImageCmd, BuildResponseItem, BuildImageResultCallback, String>getAsyncExecutor(client.buildImageCmd().withTag(tag), client.configuration()))
-            .withErrorFormatter((e) -> format("An error occurred before creating image '%s' : '%s'", tag, e.getMessage()))
-            .withSuccessFormatter((id) -> format("Successfully created image '%s'. Image ID: '%s'", tag, id))
+          .flatMap(v -> (this.<BuildImageCmd, BuildResponseItem, BuildImageResultCallback, String>getAsyncExecutor(client.buildImageCmd().withTags(ImmutableSet.of(tag)), client.configuration()))
+            .withErrorFormatter( exception -> format("An error occurred before creating image '%s' : '%s'", tag, exception.getMessage()))
+            .withSuccessFormatter( id -> format("Successfully created image '%s'. Image ID: '%s'", tag, id))
             .withResultExtractor(BuildImageResultCallback::awaitImageId)
             .withBeforeExecute(beforeCreate)
             .withAfterExecute(afterCreate)

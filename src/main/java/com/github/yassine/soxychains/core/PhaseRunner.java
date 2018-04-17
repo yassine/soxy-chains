@@ -1,5 +1,7 @@
 package com.github.yassine.soxychains.core;
 
+import io.reactivex.Single;
+
 public interface PhaseRunner {
-  void runPhase(Phase phase);
+  Single<Boolean> runPhase(Phase phase);
 }

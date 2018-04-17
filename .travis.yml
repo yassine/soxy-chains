@@ -7,3 +7,13 @@ script:
   - mvn clean test post-integration-test
 after_success:
   - mvn coveralls:report
+  - mvn sonar:sonar
+addons:
+  sonarcloud:
+    organization: yassine-github
+cache:
+  directories:
+    - '$HOME/.m2/repository'
+    - '$HOME/.sonar/cache'
+notifications:
+  email: false

@@ -1,5 +1,6 @@
 package com.github.yassine.soxychains.subsystem.docker.image.resolver;
 
+import com.github.yassine.soxychains.core.SoxyChainsException;
 import com.google.inject.Inject;
 
 import java.io.InputStream;
@@ -15,17 +16,14 @@ public class DockerImageResolver {
   @Inject @FileSystem
   private DockerImageResourceResolver fileSystemResolver;
 
-  private static final String CLASSPATH_SCHEME  = "classpath";
-  private static final String FILESYSTEM_SCHEME = "file";
-
   public InputStream resolve(URI uri, Map<String, ?> context){
-    switch (uri.getScheme()){
-      case CLASSPATH_SCHEME:
+    switch (ResolverScheme.schemeValueOf(uri.getScheme())){
+      case CLASSPATH:
         return classPathResolver.resolve(uri.getHost()+uri.getRawPath(), context);
-      case FILESYSTEM_SCHEME:
+      case FILESYSTEM:
         return fileSystemResolver.resolve(uri.getRawPath(), context);
       default:
-        throw new RuntimeException(format("Unsupported Scheme %s", uri.getScheme()));
+        throw new SoxyChainsException(format("Unsupported Scheme %s", uri.getScheme()));
     }
   }
 

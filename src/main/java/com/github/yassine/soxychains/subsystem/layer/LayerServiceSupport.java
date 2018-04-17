@@ -43,7 +43,7 @@ class LayerServiceSupport implements LayerService {
         return docker.runContainer(
           namespaceLayerNode(dockerConfiguration, node.getLayerIndex(), random),
           nameSpaceImage(dockerConfiguration, provider.image().getName()),
-          (createContainerCmd) -> {
+          createContainerCmd -> {
             provider.configureNode(createContainerCmd, node.getNodeConfiguration(), layerConfiguration);
             createContainerCmd
               .withNetworkMode(network.blockingGet().getName())
@@ -53,10 +53,7 @@ class LayerServiceSupport implements LayerService {
                   .putAll(labelizeLayerNode(provider.getClass(), node.getLayerIndex(), soxyChainsConfiguration.getDocker(), random))
                   .build()
               );
-          },
-          (containerID) -> {},
-          (startContainerCmd) -> {},
-          (containerID) -> {}
+          }
         ).map(Objects::nonNull);
       })
       .defaultIfEmpty(false)
@@ -77,11 +74,7 @@ class LayerServiceSupport implements LayerService {
       )
       .take(1)
       .flatMapMaybe(pair -> dockerProvider.get(pair.getKey().configuration())
-                              .stopContainer(namespaceLayerNode(dockerConfiguration, node.getLayerIndex(), pair.getValue().getLabels().get(RANDOM_LABEL)),
-                                (stopContainerCmd)->{},
-                                (containerID)->{},
-                                (removeContainerCmd)->{},
-                                (containerID)->{}))
+                              .stopContainer(namespaceLayerNode(dockerConfiguration, node.getLayerIndex(), pair.getValue().getLabels().get(RANDOM_LABEL))))
       .take(1)
       .single(false);
   }

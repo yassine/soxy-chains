@@ -20,7 +20,7 @@ class TaskScheduleProviderSupport implements TaskScheduleProvider {
   private final TaskScheduler taskScheduler;
   private final TaskLoader taskLoader;
 
-  private LoadingCache<Phase,List<Set<Task>>> CACHE = CacheBuilder.newBuilder().build(new CacheLoader<Phase,List<Set<Task>>>() {
+  private LoadingCache<Phase,List<Set<Task>>> cache = CacheBuilder.newBuilder().build(new CacheLoader<Phase,List<Set<Task>>>() {
     @Override
     @SuppressWarnings({"unchecked", "NullableProblems"})
     public List<Set<Task>> load(Phase key){
@@ -33,7 +33,7 @@ class TaskScheduleProviderSupport implements TaskScheduleProvider {
 
   @Override @SneakyThrows
   public List<Set<Task>> get(Phase phase) {
-    return CACHE.get(phase);
+    return cache.get(phase);
   }
 
 }

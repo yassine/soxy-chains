@@ -19,8 +19,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
+import static com.github.yassine.soxychains.subsystem.docker.image.resolver.ResolverUtils.DEFAULT_INCLUDE_PREDICATE;
+import static com.github.yassine.soxychains.subsystem.docker.image.resolver.ResolverUtils.TEMPLATE_FILENAME_PATTERN;
 import static com.machinezoo.noexception.Exceptions.sneak;
 import static java.nio.file.Files.find;
 
@@ -50,25 +53,23 @@ public class FileResolver implements DockerImageResourceResolver {
       .filter( file -> !file.isDirectory() )
       .filter( file -> includePredicate.test(file.getAbsolutePath()) )
       .map( filePath -> {
-        String relativePath = filePath.getAbsolutePath().replaceAll(path+"/","");
-        if ( DEFAULT_TEMPLATE_PREDICATE.test(filePath.getAbsolutePath()) ) {
-          Template template = sneak().get(() -> configuration.getTemplate(relativePath));
+        String absolutePath = filePath.getAbsolutePath();
+        String entryFile    = sneak().get(() -> IOUtils.toString(new FileInputStream(filePath), "utf-8"));
+        Matcher m           = TEMPLATE_FILENAME_PATTERN.matcher(absolutePath);
+        boolean matching    = m.find();
+        if(matching){
+          absolutePath = absolutePath.substring(0, absolutePath.length() - m.group().length());
           StringWriter sw = new StringWriter();
+          Template template = sneak().get(() -> configuration.getTemplate(filePath.getAbsolutePath().replaceAll(path+"/","")));
           sneak().run(() -> template.process(context, sw));
           sw.flush();
-          String result = sw.toString();
-          String entryName = relativePath;
-          if(relativePath.endsWith(".template")){
-            entryName = entryName.substring(0, entryName.length() - ".template".length());
-          }else if(relativePath.endsWith(".tpl")){
-            entryName = entryName.substring(0, entryName.length() - ".tpl".length());
-          }
-          return Pair.of(entryName, result);
-        } else {
-          return Pair.of(relativePath, sneak().get(() -> IOUtils.toString(sneak().get(() -> new FileInputStream(filePath)), "utf-8")));
+          entryFile = sw.toString();
+          return Pair.of(absolutePath.replaceAll(path+"/",""), entryFile);
+        }else{
+          return Pair.of(absolutePath.replaceAll(path+"/",""), entryFile);
         }
       }).collect(Collectors.toMap(Pair::getKey, Pair::getValue));
-    return TarUtils.createTARArchive(entries);
+    return ResolverUtils.createTARArchive(entries);
   }
 
 }

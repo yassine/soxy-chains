@@ -46,11 +46,15 @@ public class ServicesStartTask implements Task{
       //in waves of tasks that can be executed in parallel.
       .flatMap(docker -> fromIterable(taskScheduler.scheduleInstances(services))
           //for each wave of services
-          .flatMap(services -> fromFuture(supplyAsync(() -> fromIterable(services)
+          .flatMap(servicesWave -> fromFuture(supplyAsync(() -> fromIterable(servicesWave)
               //for each service
               .flatMapMaybe(service ->
                 //create & start the container that relates to the given service
-                docker.runContainer(configOf(service).serviceName(), configOf(service).imageName(),
+                docker.runContainer(
+                  //with a name of
+                  nameSpaceContainer(dockerConfiguration, configOf(service).serviceName()),
+                  //and image
+                  nameSpaceImage(dockerConfiguration, configOf(service).imageName()),
                   // The pre-create container hook is used to allow services configuring the container before its creation
                   (createContainer) -> {
                     service.configureContainer(createContainer, configOf(service), dockerConfiguration);
@@ -58,22 +62,17 @@ public class ServicesStartTask implements Task{
                     createContainer.withName(nameSpaceContainer(dockerConfiguration, configOf(service).serviceName()));
                     createContainer.withImage(nameSpaceImage(dockerConfiguration, configOf(service).imageName()));
                     createContainer.withLabels(labelizeNamedEntity(configOf(service).serviceName(), dockerConfiguration));
-                  },
-                  //The post-create hook is not used
-                  (containerID) -> {},
-                  //The pre-start hook is not used
-                  (startContainer) -> {},
-                  //The post-start hook is used
-                  (container) -> {}
+                  }
                 ).subscribeOn(Schedulers.io()).map(result -> service)
               )
               // wait for programmatic startup check
               .flatMapSingle(service -> (Single<Boolean>) service.isReady(docker.hostConfiguration(), configOf(service)))
-              // reduce the results as a single boolean value
+              // reduce (over each service) the results as a single boolean value
               .defaultIfEmpty(false).reduce(true, (a, b) -> a && b).blockingGet())
             )
           )
-      ).subscribeOn(Schedulers.io()).reduce(true, (a,b) -> a && b);
+      // reduce (over each host) the results as a single boolean value
+      ).reduce(true, (a,b) -> a && b).subscribeOn(Schedulers.io());
   }
 
   @SuppressWarnings("unchecked")

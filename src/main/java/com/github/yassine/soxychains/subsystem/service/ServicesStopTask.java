@@ -44,18 +44,15 @@ public class ServicesStopTask implements Task{
       //Services are stopped in the reverse order of their startup
       .flatMap(docker -> fromIterable(reverse(taskScheduler.scheduleInstances(services)))
           //for each wave of services
-          .flatMap(services -> fromFuture(supplyAsync(() -> fromIterable(services)
+          .flatMap(servicesWave -> fromFuture(supplyAsync(() -> fromIterable(servicesWave)
               .flatMapMaybe(service ->
                 //stop and remove the container that relates to the given service
-                docker.stopContainer(nameSpaceContainer(dockerConfiguration, configOf(service).serviceName()),
-                  (stopContainer) -> {},
-                  (containerID) -> {},
-                  (removeContainer) -> {},
-                  (container) -> {}
-                ).subscribeOn(Schedulers.io()).map(result -> true)
+                docker.stopContainer(nameSpaceContainer(dockerConfiguration, configOf(service).serviceName()))
+                      .defaultIfEmpty(false)
+                      .subscribeOn(Schedulers.io())
               )
               // reduce the results as a single boolean value
-              .defaultIfEmpty(false).reduce(true, (a,b) -> a && b).blockingGet())
+              .reduce(true, (a,b) -> a && b).blockingGet())
             )
           )
       ).subscribeOn(Schedulers.io()).reduce(true, (a,b) -> a && b);

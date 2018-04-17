@@ -13,7 +13,7 @@ public class DownCommand extends ConfigurableCommand{
 
   @Override
   public void run() {
-    phaseRunner.runPhase(Phase.STOP);
+    phaseRunner.runPhase(Phase.STOP).blockingGet();
   }
 
 }

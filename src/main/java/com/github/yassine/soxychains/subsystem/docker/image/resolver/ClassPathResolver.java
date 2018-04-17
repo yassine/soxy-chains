@@ -17,6 +17,11 @@ import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.Map;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
+
+import static com.github.yassine.soxychains.subsystem.docker.image.resolver.ResolverUtils.DEFAULT_INCLUDE_PREDICATE;
+import static com.github.yassine.soxychains.subsystem.docker.image.resolver.ResolverUtils.TEMPLATE_FILENAME_PATTERN;
+import static com.machinezoo.noexception.Exceptions.sneak;
 
 @Slf4j
 public class ClassPathResolver implements DockerImageResourceResolver{
@@ -41,32 +46,24 @@ public class ClassPathResolver implements DockerImageResourceResolver{
     ImmutableMap.Builder<String, String> sb = ImmutableMap.builder();
     scanner.matchFilenamePattern(path+"/.*",
       (FileMatchProcessor) (relativePath, inputStream, lengthBytes) -> {
-
         if( includePredicate.test(relativePath) ){
           String entryName = relativePath;
           String entryFile = IOUtils.toString(inputStream, "utf-8");
-          if(relativePath.endsWith(".template")){
-            entryName = relativePath.substring(0, relativePath.length() - ".template".length());
-          }else if(relativePath.endsWith(".tpl")){
-            entryName = relativePath.substring(0, relativePath.length() - ".tpl".length());
-          }
-
-          if(DEFAULT_TEMPLATE_PREDICATE.test(relativePath)){
-            try{
-              Template template = configuration.getTemplate(relativePath);
-              StringWriter sw = new StringWriter();
-              template.process(context, sw);
-              sw.flush();
-              entryFile = sw.toString();
-            }catch (Exception e){
-              log.error(e.getMessage(), e);
-            }
+          Matcher m = TEMPLATE_FILENAME_PATTERN.matcher(relativePath);
+          boolean matching = m.find();
+          if(matching){
+            entryName = relativePath.substring(0, relativePath.length() - m.group().length());
+            StringWriter sw = new StringWriter();
+            Template template = configuration.getTemplate(relativePath);
+            sneak().run(() -> template.process(context, sw));
+            sw.flush();
+            entryFile = sw.toString();
           }
           sb.put(entryName.replaceAll(path+"/",""), entryFile);
         }
       });
     scanner.scan();
-    return TarUtils.createTARArchive(sb.build());
+    return ResolverUtils.createTARArchive(sb.build());
   }
 
   public InputStream resolve(String path, Map<String, ?> context){

@@ -26,7 +26,7 @@ public class DriverStartupTask implements Task {
   public Single<Boolean> execute() {
     return fromIterable(dockerProvider.dockers())
       .flatMapMaybe(docker -> docker.runContainer(nameSpaceContainer(dockerConfiguration, SOXY_DRIVER_NAME), nameSpaceImage(dockerConfiguration, SOXY_DRIVER_NAME),
-        (createContainerCmd) -> createContainerCmd.withNetworkMode("host")
+        createContainerCmd -> createContainerCmd.withNetworkMode("host")
           .withPrivileged(true)
           .withBinds(
             Bind.parse("/var/run/docker.sock:/var/run/docker.sock"),
@@ -35,10 +35,7 @@ public class DriverStartupTask implements Task {
           .withLabels(
             labelizeNamedEntity(SOXY_DRIVER_NAME, dockerConfiguration)
           )
-        ,
-        (containerID) -> {},
-        (startContainerCmd) -> {},
-        (containerID) -> {})
+        )
         .map(c -> true)
         .defaultIfEmpty(true))
       .reduce(true, (a,b) -> a && b);

@@ -16,12 +16,12 @@ public class TorLayerProvider implements LayerProvider<TorLayerConfiguration, To
   private static final DockerImage IMAGE = new DockerImage("tor-node", URI.create("classpath://com/github/yassine/soxychains/subsystem/layer/spi/tor"), ImmutableMap.of());
 
   @Override
-  public void configureNode(CreateContainerCmd containerCmd, TorNodeConfiguration torNodeConfiguration, TorLayerConfiguration layerConfiguration) {
+  public void configureNode(CreateContainerCmd containerCmd, TorNodeConfiguration nodeConfiguration, TorLayerConfiguration layerConfiguration) {
 
   }
 
   @Override
-  public boolean matches(Container container, TorNodeConfiguration torNodeConfiguration, TorLayerConfiguration layerConfiguration) {
+  public boolean matches(Container container, TorNodeConfiguration nodeConfiguration, TorLayerConfiguration layerConfiguration) {
     return true;
   }
 

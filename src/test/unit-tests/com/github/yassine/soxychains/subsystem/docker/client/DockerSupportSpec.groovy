@@ -662,8 +662,7 @@ class DockerSupportSpec extends Specification {
         "my-image",
         {test -> callTrace.add(1)},
          {test -> callTrace.add(2)}
-        )
-        .blockingGet()
+        ).blockingGet(true)
     then:
       callTrace == []
       removeImageCounter.get() == 0

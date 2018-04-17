@@ -65,7 +65,7 @@ public class SoxyChainsModule extends AbstractModule {
       SimpleModule simpleModule = new SimpleModule();
       simpleModule.addDeserializer(ServicesConfiguration.class,
         new PluginsConfigDeserializer( ServicesPlugin.class,
-          (map) -> new ServicesConfiguration((Map<Class<? extends Plugin<ServicesPluginConfiguration>>, ServicesPluginConfiguration>) map)));
+          map -> new ServicesConfiguration((Map<Class<? extends Plugin<ServicesPluginConfiguration>>, ServicesPluginConfiguration>) map)));
       mapper.registerModule(simpleModule);
 
       return mapper;
@@ -95,27 +95,22 @@ public class SoxyChainsModule extends AbstractModule {
     SoxyChainsConfiguration getConfiguration(@Configuration ObjectMapper mapper, @Configuration Validator validator){
       SoxyChainsConfiguration configuration = mapper.readValue(configStream, SoxyChainsConfiguration.class);
       Set<ConstraintViolation<SoxyChainsConfiguration>> constraintViolations = validator.validate(configuration);
-      if(constraintViolations.size() > 0){
+      if(!constraintViolations.isEmpty()){
         throw new ConstraintViolationException(constraintViolations);
       }
       return configuration;
     }
 
-    @Provides @Singleton @Configuration
-    Validator getValidator(){
+    @Override
+    protected void configure() {
       ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
       Validator validator = factory.getValidator();
       factory.close();
-      return validator;
-    }
-
-    @Override
-    protected void configure() {
-
+      bind(Validator.class).annotatedWith(Configuration.class).toInstance(validator);
     }
   }
 
   @Retention(RetentionPolicy.RUNTIME) @BindingAnnotation
-  public @interface Configuration{}
+  @interface Configuration{}
 
 }

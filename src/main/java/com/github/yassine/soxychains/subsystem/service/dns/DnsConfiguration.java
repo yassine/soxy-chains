@@ -9,11 +9,11 @@ import java.util.List;
 
 @Getter
 public class DnsConfiguration implements ServicesPluginConfiguration {
-  public static final String ID = "dns";
+  public static final String DNS_CONFIG_ID = "dns";
   @NotNull
-  private String image = ID;
+  private String image = DNS_CONFIG_ID;
   @NotNull
-  private String  serviceName    = ID;
+  private String  serviceName    = DNS_CONFIG_ID;
   @NotNull
   private Integer servicePort    = 5353;
   @NotNull
@@ -21,12 +21,11 @@ public class DnsConfiguration implements ServicesPluginConfiguration {
 
   @Override
   public String serviceName() {
-    return serviceName;
+    return DNS_CONFIG_ID;
   }
-
   @Override
   public String imageName() {
-    return image;
+    return DNS_CONFIG_ID;
   }
   @Override
   public List<Integer> servicePorts() {

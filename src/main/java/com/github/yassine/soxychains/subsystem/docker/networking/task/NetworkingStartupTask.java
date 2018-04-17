@@ -12,6 +12,7 @@ import com.google.auto.service.AutoService;
 import com.google.inject.Inject;
 import io.reactivex.Observable;
 import io.reactivex.Single;
+import io.reactivex.schedulers.Schedulers;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -32,26 +33,23 @@ public class NetworkingStartupTask implements Task{
 
   @Override @SneakyThrows
   public Single<Boolean> execute() {
-    Thread.sleep(5000L);
     return Observable.concat(
       fromIterable(soxyChainsConfiguration.getLayers())
         .flatMap(layerConfiguration ->
           fromIterable(dockerProvider.dockers())
-            .flatMapMaybe(docker -> docker.createNetwork(nameSpaceLayerNetwork(dockerConfiguration, soxyChainsConfiguration.getLayers().indexOf(layerConfiguration)),
-              (createNetworkCmd) -> {
-                createNetworkCmd.withDriver(soxyDriverName(dockerConfiguration));
-              },
-              (networkID) -> {})
+            .flatMapMaybe(
+                docker -> docker.createNetwork(nameSpaceLayerNetwork(dockerConfiguration, soxyChainsConfiguration.getLayers().indexOf(layerConfiguration)),
+                createNetworkCmd -> createNetworkCmd.withDriver(soxyDriverName(dockerConfiguration)),
+                networkID -> {}
+              ).subscribeOn(Schedulers.single())
             )
         ).map(StringUtils::isNotEmpty),
       fromIterable(dockerProvider.dockers())
         .flatMapMaybe(docker -> docker.createNetwork(
           nameSpaceNetwork(dockerConfiguration, networkingConfiguration.getNetworkName()),
-          createNetworkCmd -> {
-            createNetworkCmd.withDriver(soxyDriverName(dockerConfiguration));
-          },
+          createNetworkCmd -> createNetworkCmd.withDriver(soxyDriverName(dockerConfiguration)),
           name -> {}
-        ).map(StringUtils::isNotEmpty).defaultIfEmpty(false))
+        ).subscribeOn(Schedulers.single()).map(StringUtils::isNotEmpty).defaultIfEmpty(false))
     ).reduce(true, (a, b) -> a && b);
   }
 

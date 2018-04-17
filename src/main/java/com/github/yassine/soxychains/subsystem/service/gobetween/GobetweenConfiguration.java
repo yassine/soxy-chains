@@ -8,15 +8,15 @@ import lombok.Getter;
 import javax.validation.constraints.NotNull;
 import java.util.List;
 
-import static com.github.yassine.soxychains.subsystem.service.gobetween.GobetweenConfiguration.ID;
+import static com.github.yassine.soxychains.subsystem.service.gobetween.GobetweenConfiguration.GOBETWEEN_CONFIG_ID;
 
-@Getter @ConfigKey(ID)
+@Getter @ConfigKey(GOBETWEEN_CONFIG_ID)
 public class GobetweenConfiguration implements ServicesPluginConfiguration {
-  public static final String ID = "gobetween";
+  public static final String GOBETWEEN_CONFIG_ID = "gobetween";
   @NotNull
-  private String  image       = ID;
+  private String  image       = GOBETWEEN_CONFIG_ID;
   @NotNull
-  private String  serviceName = ID;
+  private String  serviceName = GOBETWEEN_CONFIG_ID;
   @NotNull
   private Integer apiPort        = 7070;
   @NotNull

@@ -8,16 +8,16 @@ import lombok.Getter;
 import javax.validation.constraints.NotNull;
 import java.util.List;
 
-import static com.github.yassine.soxychains.subsystem.service.consul.ConsulConfiguration.ID;
+import static com.github.yassine.soxychains.subsystem.service.consul.ConsulConfiguration.CONSUL_CONFIG_ID;
 
 @SuppressWarnings("FieldCanBeLocal")
-@ConfigKey(ID)@Getter
+@ConfigKey(CONSUL_CONFIG_ID)@Getter
 public class ConsulConfiguration implements ServicesPluginConfiguration {
-  public static final String ID = "consul";
+  public static final String CONSUL_CONFIG_ID = "consul";
   @NotNull
-  private String image = ID;
+  private String image = CONSUL_CONFIG_ID;
   @NotNull
-  private String  serviceName    = ID;
+  private String  serviceName    = CONSUL_CONFIG_ID;
   @NotNull
   private Integer servicePort    = 7090;
   @NotNull

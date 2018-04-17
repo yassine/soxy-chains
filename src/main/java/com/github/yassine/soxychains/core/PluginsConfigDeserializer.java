@@ -17,6 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +30,7 @@ import static com.github.yassine.artifacts.guice.utils.GuiceUtils.loadSPIClasses
 import static com.github.yassine.soxychains.plugin.PluginUtils.configKey;
 import static com.github.yassine.soxychains.plugin.PluginUtils.defaultConfig;
 import static com.machinezoo.noexception.Exceptions.sneak;
+import static java.lang.String.format;
 import static net.jodah.typetools.TypeResolver.resolveRawArgument;
 import static net.jodah.typetools.TypeResolver.resolveRawArguments;
 
@@ -36,7 +38,7 @@ import static net.jodah.typetools.TypeResolver.resolveRawArguments;
 public class PluginsConfigDeserializer<CONFIG extends PluginSetConfiguration<?>> extends StdDeserializer<CONFIG>{
 
   private final Class<? extends Plugin> pluginContract;
-  private transient Function<Map<Class<? extends Plugin>, PluginConfiguration>, CONFIG> transform = (map) -> (CONFIG) new DefaultPluginSetConfiguration(map);
+  private transient Function<Map<Class<? extends Plugin>, PluginConfiguration>, CONFIG> transform = map -> (CONFIG) new DefaultPluginSetConfiguration(map);
 
   public PluginsConfigDeserializer(Class<? extends Plugin> pluginContract, Function<Map<Class<? extends Plugin>, PluginConfiguration>, CONFIG> transform) {
     super(PluginSetConfiguration.class);
@@ -67,8 +69,11 @@ public class PluginsConfigDeserializer<CONFIG extends PluginSetConfiguration<?>>
     pluginImplementations.stream()
       .filter(pluginClass -> stream(root.fields()).map(Map.Entry::getKey).noneMatch(key -> equalKeys(propertyNamingStrategy, key, pluginClass)) )
       .forEach(pluginClass -> {
-        //TODO check there is a no-arg constructor as per pec
         Class<? extends PluginConfiguration> pluginConfigClass = (Class<? extends PluginConfiguration>) resolveRawArgument(Plugin.class, pluginClass);
+        Arrays.stream(pluginConfigClass.getConstructors())
+          .filter(constructor -> constructor.getParameterCount() == 0)
+          .findAny()
+          .orElseThrow( () -> new SoxyChainsException(format("'%s' as implementation of '%s' contract, must have a no-arg constructor.", pluginClass.getName(), PluginConfiguration.class)) );
         PluginConfiguration config = sneak().get(pluginConfigClass::newInstance);
         builder.put(pluginClass, config);
       });

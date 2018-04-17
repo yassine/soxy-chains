@@ -1,6 +1,7 @@
 # soxy-chains
 ![Build Status](https://www.travis-ci.org/yassine/soxy-chains.svg?branch=dev)
 [![Coverage Status](https://coveralls.io/repos/github/yassine/soxy-chains/badge.svg?branch=dev)](https://coveralls.io/github/yassine/soxy-chains?branch=dev)
+[![Quality Gate](https://sonarcloud.io/api/badges/measure?metric=alert_status&key=com.github.yassine%3Asoxy-chains)](https://sonarcloud.io/dashboard/index/com.github.yassine:soxy-chains)
 
 `soxy-chains` is a scalable multi-layer TCP traffic tunneling application, providing thus military-grade traffic 
 encryption capabilities. It supports an arbitrary number of layers that spans an arbitrary number of hosts.

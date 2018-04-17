@@ -11,6 +11,7 @@ import com.github.yassine.soxychains.subsystem.docker.networking.NetworkingConfi
 import com.google.auto.service.AutoService;
 import com.google.inject.Inject;
 import io.reactivex.Single;
+import io.reactivex.schedulers.Schedulers;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
@@ -35,16 +36,13 @@ public class NetworkingStopTask implements Task{
       fromIterable(soxyChainsConfiguration.getLayers())
         .flatMap(layerConfiguration ->
           fromIterable(dockerProvider.dockers())
-            .flatMapMaybe(docker -> docker.removeNetwork(nameSpaceLayerNetwork(dockerConfiguration, soxyChainsConfiguration.getLayers().indexOf(layerConfiguration)),
-              (createNetworkCmd) -> {},
-              (networkID) -> {})
-            )
+            .flatMapMaybe(docker -> docker.removeNetwork(nameSpaceLayerNetwork(dockerConfiguration, soxyChainsConfiguration.getLayers().indexOf(layerConfiguration))))
         ),
       fromIterable(dockerProvider.dockers())
         .flatMapMaybe(docker -> docker.removeNetwork(nameSpaceNetwork(dockerConfiguration, networkingConfiguration.getNetworkName()),
           removeNetworkCmd -> {},
           name -> {}).defaultIfEmpty(false))
-    ).reduce(true, (a, b) -> a && b);
+    ).subscribeOn(Schedulers.io()).reduce(true, (a, b) -> a && b);
   }
 
 }

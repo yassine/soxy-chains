@@ -5,9 +5,9 @@ import com.github.yassine.soxychains.subsystem.docker.image.RequiresImage;
 import com.github.yassine.soxychains.subsystem.service.ServicesPlugin;
 import com.google.auto.service.AutoService;
 
-import static com.github.yassine.soxychains.subsystem.service.consul.ConsulConfiguration.ID;
+import static com.github.yassine.soxychains.subsystem.service.consul.ConsulConfiguration.CONSUL_CONFIG_ID;
 
-@RequiresImage(name = ID, resourceRoot = "classpath://com/github/yassine/soxychains/subsystem/service/"+ ID)
-@AutoService(ServicesPlugin.class) @ConfigKey(ID)
+@RequiresImage(name = CONSUL_CONFIG_ID, resourceRoot = "classpath://com/github/yassine/soxychains/subsystem/service/"+ CONSUL_CONFIG_ID)
+@AutoService(ServicesPlugin.class) @ConfigKey(CONSUL_CONFIG_ID)
 public class ConsulService implements ServicesPlugin<ConsulConfiguration>{
 }

@@ -11,6 +11,22 @@ project {
   }
   properties{
     'project.build.sourceEncoding' 'UTF-8'
+    'sonar.jacoco.reportPaths' '${project.build.directory}/coverage-reports/jacoco-ut.exec'
+    'sonar.tests' '${project.basedir}/src/test/unit-tests,${project.basedir}/src/test/functional-tests'
+    'sonar.links.homepage' 'https://github.com/yassine/soxy-chains'
+    'sonar.links.scm' 'https://github.com/yassine/soxy-chains'
+    'sonar.links.issue' 'https://github.com/yassine/soxy-chains'
+    'sonar.projectName' 'soxy-chains'
+    'sonar.projectVersion' '${project.version}'
+    'sonar.projectKey' 'com.github.yassine:soxy-chains'
+  }
+  profiles {
+    profile {
+      id 'sonar-local'
+      properties {
+        'sonar.host.url' 'http://10.1.1.1:9000'
+      }
+    }
   }
   dependencies {
     dependency 'com.fasterxml.jackson.core:jackson-annotations:2.8.5'
@@ -195,6 +211,11 @@ project {
           repoToken '${env.COVERALLS_REPO_KEY}'
           jacocoReports '${project.reporting.outputDirectory}/code-coverage/jacoco.xml'
         }
+      }
+      plugin {
+        groupId 'org.codehaus.mojo'
+        artifactId 'sonar-maven-plugin'
+        version '3.4.0.905'
       }
     }
   }
