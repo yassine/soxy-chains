@@ -10,6 +10,7 @@ import freemarker.template.Template;
 import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
 import io.github.lukehutch.fastclasspathscanner.matchprocessor.FileMatchProcessor;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 
 import java.io.InputStream;
@@ -17,7 +18,7 @@ import java.io.StringWriter;
 import java.util.Map;
 import java.util.function.Predicate;
 
-
+@Slf4j
 public class ClassPathResolver implements DockerImageResourceResolver{
 
   @Inject
@@ -58,7 +59,7 @@ public class ClassPathResolver implements DockerImageResourceResolver{
               sw.flush();
               entryFile = sw.toString();
             }catch (Exception e){
-              e.printStackTrace();
+              log.error(e.getMessage(), e);
             }
           }
           sb.put(entryName.replaceAll(path+"/",""), entryFile);

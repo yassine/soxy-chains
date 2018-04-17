@@ -36,7 +36,7 @@ import static net.jodah.typetools.TypeResolver.resolveRawArguments;
 public class PluginsConfigDeserializer<CONFIG extends PluginSetConfiguration<?>> extends StdDeserializer<CONFIG>{
 
   private final Class<? extends Plugin> pluginContract;
-  private Function<Map<Class<? extends Plugin>, PluginConfiguration>, CONFIG> transform = (map) -> (CONFIG) new DefaultPluginSetConfiguration(map);
+  private transient Function<Map<Class<? extends Plugin>, PluginConfiguration>, CONFIG> transform = (map) -> (CONFIG) new DefaultPluginSetConfiguration(map);
 
   public PluginsConfigDeserializer(Class<? extends Plugin> pluginContract, Function<Map<Class<? extends Plugin>, PluginConfiguration>, CONFIG> transform) {
     super(PluginSetConfiguration.class);
@@ -69,7 +69,7 @@ public class PluginsConfigDeserializer<CONFIG extends PluginSetConfiguration<?>>
       .forEach(pluginClass -> {
         //TODO check there is a no-arg constructor as per pec
         Class<? extends PluginConfiguration> pluginConfigClass = (Class<? extends PluginConfiguration>) resolveRawArgument(Plugin.class, pluginClass);
-        PluginConfiguration config = sneak().get(() -> pluginConfigClass.newInstance());
+        PluginConfiguration config = sneak().get(pluginConfigClass::newInstance);
         builder.put(pluginClass, config);
       });
     return transform.apply(builder.build());

@@ -104,7 +104,9 @@ public class SoxyChainsModule extends AbstractModule {
     @Provides @Singleton @Configuration
     Validator getValidator(){
       ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
-      return factory.getValidator();
+      Validator validator = factory.getValidator();
+      factory.close();
+      return validator;
     }
 
     @Override
