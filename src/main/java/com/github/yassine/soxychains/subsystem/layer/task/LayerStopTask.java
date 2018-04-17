@@ -45,14 +45,9 @@ public class LayerStopTask implements Task{
                     .flatMap(Observable::fromIterable)
                     .map(container -> Pair.of(docker, container))
                 ))
-              .flatMapMaybe(
-                  pair -> dockerProvider.get(pair.getKey().configuration()).stopContainer(
-                      namespaceLayerNode(dockerConfiguration, Integer.parseInt(pair.getValue().getLabels().get(LAYER_PROVIDER_INDEX)), pair.getValue().getLabels().get(RANDOM_LABEL)),
-                      (stopContainerCmd) -> {},
-                      (containerID) -> {},
-                      (removeContainerCmd) -> {},
-                      (containerID) -> {}
-                    )
+              .flatMapMaybe(pair -> dockerProvider.get(pair.getKey().configuration()).stopContainer(
+                  namespaceLayerNode(dockerConfiguration, Integer.parseInt(pair.getValue().getLabels().get(LAYER_PROVIDER_INDEX)), pair.getValue().getLabels().get(RANDOM_LABEL))
+                )
               )
               .reduce(true , (a,b) -> a && b) ;
   }

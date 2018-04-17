@@ -26,14 +26,14 @@ class NetworkingStartupTaskSpec extends Specification {
 
   def "execute: it should return true when networks are successfully created" () {
     setup:
-    docker.createNetwork(_ as String, _ as Consumer<CreateNetworkCmd>, _ as Consumer<String>) >> Maybe.just("network_id")
+    docker.createNetwork(_ as String, _ as Consumer<CreateNetworkCmd>) >> Maybe.just("network_id")
     expect:
     task.execute().blockingGet()
   }
 
   def "execute: it should return true when networks fail to get created" () {
     setup:
-    docker.createNetwork(_ as String, _ as Consumer<CreateNetworkCmd>, _ as Consumer<String>) >> Maybe.empty()
+    docker.createNetwork(_ as String, _ as Consumer<CreateNetworkCmd>) >> Maybe.empty()
     expect:
     !task.execute().blockingGet()
   }

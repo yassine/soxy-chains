@@ -39,9 +39,7 @@ public class NetworkingStopTask implements Task{
             .flatMapMaybe(docker -> docker.removeNetwork(nameSpaceLayerNetwork(dockerConfiguration, soxyChainsConfiguration.getLayers().indexOf(layerConfiguration))))
         ),
       fromIterable(dockerProvider.dockers())
-        .flatMapMaybe(docker -> docker.removeNetwork(nameSpaceNetwork(dockerConfiguration, networkingConfiguration.getNetworkName()),
-          removeNetworkCmd -> {},
-          name -> {}).defaultIfEmpty(false))
+        .flatMapMaybe(docker -> docker.removeNetwork(nameSpaceNetwork(dockerConfiguration, networkingConfiguration.getNetworkName())).defaultIfEmpty(false))
     ).subscribeOn(Schedulers.io()).reduce(true, (a, b) -> a && b);
   }
 

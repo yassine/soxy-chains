@@ -42,7 +42,7 @@ class LayerServiceSupport implements LayerService {
         String random = randomName();
         return docker.runContainer(
           namespaceLayerNode(dockerConfiguration, node.getLayerIndex(), random),
-          nameSpaceImage(dockerConfiguration, provider.image().getName()),
+          nameSpaceImage(dockerConfiguration, provider.image(layerConfiguration).getName()),
           createContainerCmd -> {
             provider.configureNode(createContainerCmd, node.getNodeConfiguration(), layerConfiguration);
             createContainerCmd

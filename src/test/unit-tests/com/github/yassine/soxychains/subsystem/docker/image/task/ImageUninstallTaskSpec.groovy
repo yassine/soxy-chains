@@ -1,6 +1,5 @@
 package com.github.yassine.soxychains.subsystem.docker.image.task
 
-import com.github.dockerjava.api.command.RemoveImageCmd
 import com.github.yassine.soxychains.subsystem.docker.client.Docker
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration
@@ -9,8 +8,6 @@ import com.github.yassine.soxychains.subsystem.docker.image.api.ImageRequirer
 import io.reactivex.Maybe
 import io.reactivex.Observable
 import spock.lang.Specification
-
-import java.util.function.Consumer
 
 class ImageUninstallTaskSpec extends Specification {
   Docker docker = Mock()
@@ -26,14 +23,14 @@ class ImageUninstallTaskSpec extends Specification {
 
   def "execute: it should return true if all the necessary image have uninstalled"() {
     setup:
-    docker.removeImage(_ as String, _ as Consumer<RemoveImageCmd>, _ as Consumer<String>) >> Maybe.just(true)
+    docker.removeImage(_ as String) >> Maybe.just(true)
     expect:
     task.execute().blockingGet()
   }
 
   def "execute: it should return true if some necessary image uninstall have failed"() {
     setup:
-    docker.removeImage(_ as String, _ as Consumer<RemoveImageCmd>, _ as Consumer<String>) >> Maybe.just(false)
+    docker.removeImage(_ as String) >> Maybe.just(false)
     expect:
     !task.execute().blockingGet()
   }

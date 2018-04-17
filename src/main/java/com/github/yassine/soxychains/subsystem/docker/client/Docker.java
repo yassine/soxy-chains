@@ -15,12 +15,18 @@ public interface Docker {
   Maybe<Boolean> removeImage(String tag,
                              Consumer<RemoveImageCmd> beforeRemove,
                              Consumer<String> afterRemove);
+
+  Maybe<Boolean> removeImage(String tag);
   Maybe<String> buildImage(String tag,
                            Consumer<BuildImageCmd> beforeCreate,
                            Consumer<String> afterCreate);
+  Maybe<String> buildImage(String tag,
+                           Consumer<BuildImageCmd> beforeCreate);
   Maybe<String> createNetwork(String networkName,
                               Consumer<CreateNetworkCmd> beforeCreate,
                               Consumer<String> afterCreate);
+  Maybe<String> createNetwork(String networkName,
+                              Consumer<CreateNetworkCmd> beforeCreate);
   Maybe<Boolean> removeNetwork(String networkName,
                                Consumer<RemoveNetworkCmd> beforeRemove,
                                Consumer<String> afterRemove);

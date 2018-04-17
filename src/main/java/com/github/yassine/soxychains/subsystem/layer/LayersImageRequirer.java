@@ -21,8 +21,7 @@ public class LayersImageRequirer implements ImageRequirer{
   @Override
   public Observable<DockerImage> require() {
     return Observable.fromIterable(configuration.getLayers())
-      .map(layerConfiguration -> mapLayerConfiguration.get(layerConfiguration.getClass()))
-      .map(LayerProvider::image)
+      .map(layerConfiguration -> mapLayerConfiguration.get(layerConfiguration.getClass()).image(layerConfiguration))
       //remove duplicates
       .collectInto(new HashSet<DockerImage>(), HashSet::add)
       .toObservable()

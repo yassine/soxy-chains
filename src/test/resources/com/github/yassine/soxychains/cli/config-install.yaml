@@ -4,3 +4,4 @@ docker:
    - uri: unix:///var/run/docker.sock
 layers:
   - type: tor
+    exit_nodes: '{fr},{de},{gb}'

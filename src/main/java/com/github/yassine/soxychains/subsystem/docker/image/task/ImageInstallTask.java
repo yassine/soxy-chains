@@ -39,8 +39,7 @@ public class ImageInstallTask implements Task {
     return fromIterable(dockerProvider.dockers())
             .flatMap(docker -> getNecessaryImages(imageRequirer)
               .flatMapMaybe(image -> docker.buildImage(nameSpaceImage(dockerConfiguration, image.getName()),
-                                                       imgCmd -> imgCmd.withTarInputStream(dockerImageResolver.resolve(image.getRoot(), image.getTemplateVars())).withForcerm(true),
-                                                       imageID -> {})
+                                                       imgCmd -> imgCmd.withTarInputStream(dockerImageResolver.resolve(image.getRoot(), image.getTemplateVars())).withForcerm(true))
                                             .map(StringUtils::isNoneEmpty)
               .defaultIfEmpty(false)).subscribeOn(Schedulers.io()))
             .reduce(true , (a, b) -> a && b);

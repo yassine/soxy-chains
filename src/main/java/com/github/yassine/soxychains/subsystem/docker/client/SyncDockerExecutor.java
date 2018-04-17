@@ -4,6 +4,7 @@ import com.github.dockerjava.api.command.SyncDockerCmd;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerHostConfiguration;
 import com.google.common.base.Preconditions;
 import io.reactivex.Maybe;
+import io.reactivex.schedulers.Schedulers;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,7 +45,7 @@ class SyncDockerExecutor<RESULT, CMD extends SyncDockerCmd<RESULT> > {
         log.error(e.getMessage(), e);
         return Maybe.<RESULT>empty();
       }
-    })).flatMap(v -> v);
+    })).flatMap(v -> v).subscribeOn(Schedulers.io());
   }
 
   public SyncDockerExecutor<RESULT, CMD> withSuccessFormatter(Function<RESULT, String> successFormatter){

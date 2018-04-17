@@ -72,12 +72,17 @@ class DockerSupport implements Docker {
               .withName(networkName)
               .withLabels(overrideLabels(createNetworkCmd.getLabels(), labelizeNamedEntity(networkName, dockerConfiguration))
           )))
-          .withAfterExecute( networkResponse -> afterCreate.accept( networkResponse.getId() ) )
+          .withAfterExecute( networkResponse -> Optional.ofNullable(afterCreate).ifPresent(hook -> hook.accept( networkResponse.getId() ) ))
           .execute()
           .map(CreateNetworkResponse::getId)
         )
       )
       .flatMap(v -> v);
+  }
+
+  @Override
+  public Maybe<String> createNetwork(String networkName, Consumer<CreateNetworkCmd> beforeCreate) {
+    return createNetwork(networkName, beforeCreate, null);
   }
 
   @Override
@@ -93,7 +98,6 @@ class DockerSupport implements Docker {
     .flatMap(v -> v);
   }
 
-
   @Override
   public Maybe<Boolean> removeNetwork(String networkName, Consumer<RemoveNetworkCmd> beforeRemove, Consumer<String> afterRemove) {
     return fromFuture(supplyAsync(() ->
@@ -105,7 +109,7 @@ class DockerSupport implements Docker {
             .withSuccessFormatter( vd -> format("Successfully removed network '%s' with id '%s' ", networkName, network.getId()) )
             .withErrorFormatter( exception -> format("An occurred while removing network '%s' : '%s'", networkName, exception.getMessage()) )
             .withBeforeExecute(beforeRemove)
-            .withAfterExecute( vd -> afterRemove.accept( networkName ))
+            .withAfterExecute( vd -> ofNullable(afterRemove).ifPresent(hook -> hook.accept( networkName )) )
             .execute()
             .subscribeOn(Schedulers.io()))
           .map(v -> true)
@@ -117,7 +121,7 @@ class DockerSupport implements Docker {
 
   @Override
   public Maybe<Boolean> removeNetwork(String networkName) {
-    return removeNetwork(networkName, removeNetworkCmd -> {}, id -> {});
+    return removeNetwork(networkName, null, null);
   }
 
   @Override
@@ -154,9 +158,9 @@ class DockerSupport implements Docker {
             .orElseGet( () -> {
               CreateContainerCmd command = client.createContainerCmd(image)
                 .withName(containerName);
-              beforeCreate.accept(command);
+              ofNullable(beforeCreate).ifPresent(hook -> hook.accept(command));
               String containerID = command.exec().getId();
-              afterCreate.accept(containerID);
+              ofNullable(afterCreate).ifPresent(hook -> hook.accept(containerID));
               Container container = client.listContainersCmd()
                 .withShowAll(true)
                 .withLabelFilter(
@@ -182,10 +186,10 @@ class DockerSupport implements Docker {
       if(createContainerStatus.container() != null && !createContainerStatus.isStarted()){
         try{
           StartContainerCmd command = client.startContainerCmd(createContainerStatus.container().getId());
-          beforeStart.accept(command);
+          ofNullable(beforeStart).ifPresent(hook -> hook.accept(command));
           command.exec();
           log.info("Successfully started container '{}'", Arrays.toString(createContainerStatus.container().getNames()));
-          afterStart.accept(containerName);
+          ofNullable(afterStart).ifPresent(hook -> hook.accept(containerName));
           return just(createContainerStatus.container());
         }catch (Exception e){
           log.error(format("Couldn't start container '%s' : %s", containerName, e.getMessage()));
@@ -204,7 +208,7 @@ class DockerSupport implements Docker {
 
   @Override
   public Maybe<Container> runContainer(String containerName, String image, Consumer<CreateContainerCmd> beforeCreate) {
-    return runContainer(containerName, image, beforeCreate, afterCreate -> {}, beforeStart -> {}, afterStart -> {});
+    return runContainer(containerName, image, beforeCreate, null, null, null);
   }
 
   @Override
@@ -215,10 +219,10 @@ class DockerSupport implements Docker {
             .map(container -> {
               if (container.getStatus().contains("Up")) {
                 StopContainerCmd command = client.stopContainerCmd(container.getId());
-                beforeStop.accept(command);
+                ofNullable(beforeStop).ifPresent(hook -> hook.accept(command));
                 command.exec();
                 log.info(format("Successfully stopped container '%s'.", containerName));
-                afterStop.accept(containerName);
+                ofNullable(afterStop).ifPresent(hook -> hook.accept(containerName));
               }else{
                 log.info(format("Skipping container '%s' stopping. The container is already stopped.", containerName));
               }
@@ -239,10 +243,10 @@ class DockerSupport implements Docker {
       if(pair.getKey() != null){
         try{
           RemoveContainerCmd command = client.removeContainerCmd(pair.getKey());
-          beforeRemove.accept(command);
+          ofNullable(beforeRemove).ifPresent(hook -> hook.accept(command));
           command.exec();
           log.info(format("Successfully removed container '%s'.", containerName));
-          afterRemove.accept(containerName);
+          ofNullable(afterRemove).ifPresent(hook -> hook.accept(containerName));
           return just(true);
         }catch (Exception e){
           log.error(format("Couldn't remove container '%s' : %s", containerName, e.getMessage()));
@@ -257,7 +261,7 @@ class DockerSupport implements Docker {
 
   @Override
   public Maybe<Boolean> stopContainer(String containerName) {
-    return stopContainer(containerName, beforeStop -> {}, afterStop -> {}, beforeRemove -> {}, afterRemove -> {});
+    return stopContainer(containerName, null, null, null, null);
   }
 
   @Override
@@ -273,9 +277,14 @@ class DockerSupport implements Docker {
           .withSuccessFormatter( v -> format("Successfully removed image '%s'", tag) )
           .withErrorFormatter( exception -> format("An occurred before removing image '%s' : '%s'", tag, exception.getMessage()) )
           .withBeforeExecute( beforeRemove )
-          .withAfterExecute( v -> afterRemove.accept( tag ))
+          .withAfterExecute( v -> ofNullable(afterRemove).ifPresent(hook -> hook.accept( tag )))
           .execute().blockingGet(), true).subscribeOn(Schedulers.io())
       ).defaultIfEmpty(true);
+  }
+
+  @Override
+  public Maybe<Boolean> removeImage(String tag) {
+    return removeImage(tag, null, null);
   }
 
   @Override
@@ -298,6 +307,11 @@ class DockerSupport implements Docker {
         )
       )
       .subscribeOn(Schedulers.io());
+  }
+
+  @Override
+  public Maybe<String> buildImage(String tag, Consumer<BuildImageCmd> beforeCreate) {
+    return buildImage(tag, beforeCreate, null);
   }
 
   <CMD extends AsyncDockerCmd<CMD, ITEM>, ITEM, CALLBACK extends ResultCallback<ITEM>, RESULT> ASyncDockerExecutor<CMD, ITEM, CALLBACK, RESULT> getAsyncExecutor(CMD command, DockerHostConfiguration config){

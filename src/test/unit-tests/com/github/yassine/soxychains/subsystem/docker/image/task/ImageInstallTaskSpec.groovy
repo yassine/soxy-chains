@@ -29,14 +29,14 @@ class ImageInstallTaskSpec extends Specification {
 
   def "execute: it should return true if all the necessary image have installed"() {
     setup:
-    docker.buildImage(_ as String, _ as Consumer<BuildImageCmd>, _ as Consumer<String>) >> Maybe.just("test")
+    docker.buildImage(_ as String, _ as Consumer<BuildImageCmd>) >> Maybe.just("test")
     expect:
     task.execute().blockingGet()
   }
 
   def "execute: it should return true if some necessary image have failed"() {
     setup:
-    docker.buildImage(_ as String, _ as Consumer<BuildImageCmd>, _ as Consumer<String>) >> Maybe.empty()
+    docker.buildImage(_ as String, _ as Consumer<BuildImageCmd>) >> Maybe.empty()
     expect:
     !task.execute().blockingGet()
   }

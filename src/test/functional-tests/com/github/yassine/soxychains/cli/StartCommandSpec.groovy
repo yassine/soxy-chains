@@ -5,7 +5,6 @@ import com.github.yassine.soxychains.SoxyChainsApplication
 import com.github.yassine.soxychains.SoxyChainsConfiguration
 import com.github.yassine.soxychains.SoxyChainsModule
 import com.github.yassine.soxychains.TestUtils
-import com.github.yassine.soxychains.subsystem.docker.NamespaceUtils
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration
 import com.github.yassine.soxychains.subsystem.docker.image.api.ImageRequirer
 import com.github.yassine.soxychains.subsystem.layer.AbstractLayerConfiguration
@@ -31,6 +30,10 @@ import java.util.stream.Collectors
 
 import static com.github.yassine.soxychains.plugin.PluginUtils.configClassOf
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.*
+import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.NAMESPACE_LABEL
+import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.SYSTEM_LABEL
+import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.nameSpaceNetwork
+import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.soxyDriverName
 import static java.util.Arrays.stream
 
 @Stepwise @UseModules(TestModule)
@@ -60,7 +63,7 @@ class StartCommandSpec extends Specification {
     SoxyChainsApplication.main("up", "-c", config.getAbsolutePath())
     def dockerClient     = TestUtils.dockerClient(configuration.getHosts().get(0))
     def dockerImages     = dockerClient.listImagesCmd().exec()
-    def dockerContainers = dockerClient.listContainersCmd().withLabelFilter(ImmutableMap.of(NamespaceUtils.SYSTEM_LABEL, "",NamespaceUtils.NAMESPACE_LABEL, configuration.getNamespace()))
+    def dockerContainers = dockerClient.listContainersCmd().withLabelFilter(ImmutableMap.of(SYSTEM_LABEL, "",NAMESPACE_LABEL, configuration.getNamespace()))
       .exec().stream().filter{container -> container.getStatus().contains("Up")}.collect(Collectors.<Container>toList())
 
     expect:
@@ -76,7 +79,7 @@ class StartCommandSpec extends Specification {
 
     //the driver is running under the config provided namespace
     dockerClient.listContainersCmd()
-      .withLabelFilter(NamespaceUtils.labelizeNamedEntity(SOXY_DRIVER_NAME, configuration))
+      .withLabelFilter(labelizeNamedEntity(SOXY_DRIVER_NAME, configuration))
       .exec().stream()
       .filter{container -> stream(container.getNames()).anyMatch{name -> name.contains(nameSpaceContainer(configuration, SOXY_DRIVER_NAME))}}
       .filter{container -> container.getStatus().contains("Up")}
@@ -85,8 +88,8 @@ class StartCommandSpec extends Specification {
     //main network have been created using the soxy-driver
     dockerClient.listNetworksCmd().exec()
       .stream()
-      .filter{ network -> network.getDriver() == NamespaceUtils.soxyDriverName(configuration) }
-      .filter{ network -> network.getName().contains(NamespaceUtils.nameSpaceNetwork(configuration, configuration.getNetworkingConfiguration().getNetworkName())) }
+      .filter{ network -> network.getDriver() == soxyDriverName(configuration) }
+      .filter{ network -> network.getName().contains(nameSpaceNetwork(configuration, configuration.getNetworkingConfiguration().getNetworkName())) }
       .findAny()
       .isPresent()
 
@@ -156,7 +159,7 @@ class StartCommandSpec extends Specification {
     SoxyChainsApplication.main("down", "-c", config.getAbsolutePath())
     def dockerClient     = TestUtils.dockerClient(configuration.getHosts().get(0))
     def dockerImages     = dockerClient.listImagesCmd().exec()
-    def dockerContainers = dockerClient.listContainersCmd().withLabelFilter(ImmutableMap.of(NamespaceUtils.SYSTEM_LABEL, "",NamespaceUtils.NAMESPACE_LABEL, configuration.getNamespace()))
+    def dockerContainers = dockerClient.listContainersCmd().withLabelFilter(ImmutableMap.of(SYSTEM_LABEL, "",NAMESPACE_LABEL, configuration.getNamespace()))
       .exec().stream().filter{container -> container.getStatus().contains("Up")}.collect(Collectors.<Container>toList())
     def layerNode     = new LayerNode(0, new TorNodeConfiguration())
     def layerProvider = providers.get(TorLayerConfiguration.class)

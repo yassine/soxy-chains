@@ -56,7 +56,7 @@ public class ServicesStartTask implements Task{
                   //and image
                   nameSpaceImage(dockerConfiguration, configOf(service).imageName()),
                   // The pre-create container hook is used to allow services configuring the container before its creation
-                  (createContainer) -> {
+                  createContainer -> {
                     service.configureContainer(createContainer, configOf(service), dockerConfiguration);
                     createContainer.withNetworkMode(nameSpaceNetwork(dockerConfiguration, networkingConfiguration.getNetworkName()));
                     createContainer.withName(nameSpaceContainer(dockerConfiguration, configOf(service).serviceName()));

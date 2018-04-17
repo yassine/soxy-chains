@@ -2,7 +2,7 @@
 <Configuration status="INFO" name="soxy-chains" packages="">
   <Appenders>
     <Console name="COLORFUL" target="SYSTEM_OUT">
-      <PatternLayout pattern="%d{[${LOG_DATEFORMAT_PATTERN:-yyyy-MM-dd HH:mm:ss.SSS}}] %highlight{[${LOG_LEVEL_PATTERN:-%p}]}{FATAL=red blink, ERROR=red, WARN=yellow bold, INFO=green, DEBUG=green bold, TRACE=blue} %style{[%t]}{magenta}  %style{[%C{1.}]}{cyan} : %m%n"/>
+      <PatternLayout pattern="%d{[${LOG_DATEFORMAT_PATTERN:-yyyy-MM-dd HH:mm:ss.SSS}}] %highlight{[${LOG_LEVEL_PATTERN:-%p}]}{FATAL=red blink, ERROR=red, WARN=yellow bold, INFO=green, DEBUG=green bold, TRACE=blue} %style{[%t]}{magenta} %style{[%C{1.}]}{cyan} : %m%n"/>
     </Console>
   </Appenders>
   <Loggers>

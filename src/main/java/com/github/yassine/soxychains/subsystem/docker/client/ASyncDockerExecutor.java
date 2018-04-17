@@ -5,6 +5,7 @@ import com.github.dockerjava.api.command.AsyncDockerCmd;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerHostConfiguration;
 import com.google.common.base.Preconditions;
 import io.reactivex.Maybe;
+import io.reactivex.schedulers.Schedulers;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Optional;
@@ -53,7 +54,7 @@ class ASyncDockerExecutor<CMD_T extends AsyncDockerCmd<CMD_T, A_RES_T>, A_RES_T,
         log.error(errorFormatter.apply(e));
         return Maybe.<RESULT>empty();
       }
-    })).flatMap(v -> v);
+    })).flatMap(v -> v).subscribeOn(Schedulers.io());
   }
 
   Function<CALLBACK, RESULT> getResultExtractor(){

@@ -26,14 +26,14 @@ class NetworkingStopTaskSpec extends Specification {
 
   def "execute: it should return true when networks are successfully created" () {
     setup:
-    docker.removeNetwork(_ as String, _ as Consumer<RemoveNetworkCmd>, _ as Consumer<String>) >> Maybe.just(true)
+    docker.removeNetwork(_ as String) >> Maybe.just(true)
     expect:
     task.execute().blockingGet()
   }
 
   def "execute: it should return true when networks fail to get created" () {
     setup:
-    docker.removeNetwork(_ as String, _ as Consumer<RemoveNetworkCmd>, _ as Consumer<String>) >> Maybe.just(false)
+    docker.removeNetwork(_ as String) >> Maybe.just(false)
     expect:
     !task.execute().blockingGet()
   }

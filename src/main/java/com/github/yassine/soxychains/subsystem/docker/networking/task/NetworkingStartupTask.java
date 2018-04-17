@@ -39,16 +39,14 @@ public class NetworkingStartupTask implements Task{
           fromIterable(dockerProvider.dockers())
             .flatMapMaybe(
                 docker -> docker.createNetwork(nameSpaceLayerNetwork(dockerConfiguration, soxyChainsConfiguration.getLayers().indexOf(layerConfiguration)),
-                createNetworkCmd -> createNetworkCmd.withDriver(soxyDriverName(dockerConfiguration)),
-                networkID -> {}
+                createNetworkCmd -> createNetworkCmd.withDriver(soxyDriverName(dockerConfiguration))
               ).subscribeOn(Schedulers.single())
             )
         ).map(StringUtils::isNotEmpty),
       fromIterable(dockerProvider.dockers())
         .flatMapMaybe(docker -> docker.createNetwork(
           nameSpaceNetwork(dockerConfiguration, networkingConfiguration.getNetworkName()),
-          createNetworkCmd -> createNetworkCmd.withDriver(soxyDriverName(dockerConfiguration)),
-          name -> {}
+          createNetworkCmd -> createNetworkCmd.withDriver(soxyDriverName(dockerConfiguration))
         ).subscribeOn(Schedulers.single()).map(StringUtils::isNotEmpty).defaultIfEmpty(false))
     ).reduce(true, (a, b) -> a && b);
   }

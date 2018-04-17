@@ -33,9 +33,7 @@ public class ImageUninstallTask implements Task{
   public Single<Boolean> execute() {
     return Observable.fromIterable(dockerProvider.dockers())
       .flatMap(docker -> getNecessaryImages(imageRequirer)
-          .flatMapMaybe(image -> docker.removeImage(nameSpaceImage(dockerConfiguration, image.getName()),
-                                                    imgCmd -> {},
-                                                    imageID -> {})
+          .flatMapMaybe(image -> docker.removeImage(nameSpaceImage(dockerConfiguration, image.getName()))
           .defaultIfEmpty(false)))
       .reduce(true , (a,b) -> a && b);
   }
