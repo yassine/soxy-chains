@@ -17,6 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -51,6 +52,7 @@ public class PluginsConfigDeserializer<CONFIG extends PluginSetConfiguration<?>>
     this.pluginContract = pluginContract;
   }
 
+  @SuppressWarnings({"unchecked"})
   @Override
   public CONFIG deserialize(JsonParser jp, DeserializationContext context) throws IOException {
     ObjectMapper mapper = (ObjectMapper) jp.getCodec();
@@ -70,11 +72,11 @@ public class PluginsConfigDeserializer<CONFIG extends PluginSetConfiguration<?>>
       .filter(pluginClass -> stream(root.fields()).map(Map.Entry::getKey).noneMatch(key -> equalKeys(propertyNamingStrategy, key, pluginClass)) )
       .forEach(pluginClass -> {
         Class<? extends PluginConfiguration> pluginConfigClass = (Class<? extends PluginConfiguration>) resolveRawArgument(Plugin.class, pluginClass);
-        Arrays.stream(pluginConfigClass.getConstructors())
-          .filter(constructor -> constructor.getParameterCount() == 0)
+        Constructor<? extends PluginConfiguration> constructor = (Constructor<? extends PluginConfiguration>) Arrays.stream(pluginConfigClass.getConstructors())
+          .filter(constr -> constr.getParameterCount() == 0)
           .findAny()
           .orElseThrow( () -> new SoxyChainsException(format("'%s' as implementation of '%s' contract, must have a no-arg constructor.", pluginClass.getName(), PluginConfiguration.class)) );
-        PluginConfiguration config = sneak().get(pluginConfigClass::newInstance);
+        PluginConfiguration config = sneak().get(constructor::newInstance);
         builder.put(pluginClass, config);
       });
     return transform.apply(builder.build());

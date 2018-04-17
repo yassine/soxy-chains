@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.github.yassine.soxychains.subsystem.docker.image.resolver.ResolverUtils.DEFAULT_INCLUDE_PREDICATE;
 import static com.github.yassine.soxychains.subsystem.docker.image.resolver.ResolverUtils.TEMPLATE_FILENAME_PATTERN;
@@ -48,7 +49,8 @@ public class FileResolver implements DockerImageResourceResolver {
   public InputStream resolve(String path, Map<String, ?> context, Predicate<String> includePredicate) {
     Path contextPath = Paths.get(path);
     Configuration configuration = configLoader.get(path);
-    Map<String,String> entries = find(contextPath, 20, (p, attr) -> true)
+    Stream<Path> files = find(contextPath, 20, (p, attr) -> true);
+    Map<String,String> entries = files
       .map(Path::toFile)
       .filter( file -> !file.isDirectory() )
       .filter( file -> includePredicate.test(file.getAbsolutePath()) )
@@ -69,6 +71,7 @@ public class FileResolver implements DockerImageResourceResolver {
           return Pair.of(absolutePath.replaceAll(path+"/",""), entryFile);
         }
       }).collect(Collectors.toMap(Pair::getKey, Pair::getValue));
+    files.close();
     return ResolverUtils.createTARArchive(entries);
   }
 
