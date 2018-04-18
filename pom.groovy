@@ -220,6 +220,7 @@ project {
               goal 'read-project-properties'
             }
             configuration {
+              quiet 'true'
               files {
                 file '${project.basedir}/dev-sonar.properties'
               }
