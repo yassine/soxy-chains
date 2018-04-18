@@ -1,6 +1,5 @@
 package com.github.yassine.soxychains.subsystem.docker.networking.task
 
-import com.github.dockerjava.api.command.RemoveNetworkCmd
 import com.github.yassine.soxychains.SoxyChainsConfiguration
 import com.github.yassine.soxychains.subsystem.docker.client.Docker
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider
@@ -8,8 +7,6 @@ import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration
 import com.github.yassine.soxychains.subsystem.docker.networking.NetworkingConfiguration
 import io.reactivex.Maybe
 import spock.lang.Specification
-
-import java.util.function.Consumer
 
 class NetworkingStopTaskSpec extends Specification {
 

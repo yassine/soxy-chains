@@ -6,6 +6,7 @@ import com.github.yassine.soxychains.SoxyChainsConfiguration
 import com.github.yassine.soxychains.SoxyChainsModule
 import com.github.yassine.soxychains.TestUtils
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration
+import com.github.yassine.soxychains.subsystem.docker.image.api.DockerImage
 import com.github.yassine.soxychains.subsystem.docker.image.api.ImageRequirer
 import com.github.yassine.soxychains.subsystem.layer.AbstractLayerConfiguration
 import com.github.yassine.soxychains.subsystem.layer.LayerNode
@@ -30,17 +31,13 @@ import java.util.stream.Collectors
 
 import static com.github.yassine.soxychains.plugin.PluginUtils.configClassOf
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.*
-import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.NAMESPACE_LABEL
-import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.SYSTEM_LABEL
-import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.nameSpaceNetwork
-import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.soxyDriverName
 import static java.util.Arrays.stream
 
 @Stepwise @UseModules(TestModule)
 class StartCommandSpec extends Specification {
 
   @Inject
-  private SoxyChainsConfiguration soxyChainsConfiguration;
+  private SoxyChainsConfiguration soxyChainsConfiguration
   @Inject
   private Set<ImageRequirer> imageRequirers
   @Inject
@@ -70,10 +67,10 @@ class StartCommandSpec extends Specification {
     //all the required images have been created
     Observable.fromIterable(imageRequirers)
       .flatMap({ requirer -> requirer.require() })
-      .map({ requiredImage -> requiredImage.getName() })
-      .map({ requiredImage -> dockerImages.stream().anyMatch{ repoImage ->
+      .map{ DockerImage requiredImage -> requiredImage.getName() }
+      .map{ String requiredImage -> dockerImages.stream().anyMatch{ repoImage ->
         stream(repoImage.getRepoTags()).anyMatch{tag -> tag.contains(nameSpaceImage(configuration, requiredImage))}
-      }})
+      }}
       .reduce(true, { a, b -> a && b })
       .blockingGet()
 
@@ -95,9 +92,9 @@ class StartCommandSpec extends Specification {
 
     //all services are up & running
     services.stream()
-      .map{ service -> (ServicesPluginConfiguration) injector.getInstance(configClassOf((Class) service.getClass())) }
-      .map{ serviceConfig -> nameSpaceContainer(configuration, serviceConfig.serviceName()) }
-      .allMatch{ serviceName -> dockerContainers.stream()
+      .map{ service -> injector.getInstance(configClassOf((Class) service.getClass())) }
+      .map{ ServicesPluginConfiguration serviceConfig -> nameSpaceContainer(configuration, serviceConfig.serviceName()) }
+      .allMatch{ String serviceName -> dockerContainers.stream()
         .filter{ container ->
           stream(container.getNames()).anyMatch{ name -> (name.contains(nameSpaceContainer(configuration, serviceName))) }
         }
@@ -170,18 +167,18 @@ class StartCommandSpec extends Specification {
     expect:
     //all the required images still exist
     Observable.fromIterable(imageRequirers)
-      .flatMap({ requirer -> requirer.require() })
-      .map({ requiredImage -> requiredImage.getName() })
-      .map({ requiredImage -> dockerImages.stream().anyMatch{ repoImage ->
+      .flatMap{ requirer -> requirer.require() }
+      .map{ DockerImage requiredImage -> requiredImage.getName() }
+      .map{ String requiredImage -> dockerImages.stream().anyMatch{ repoImage ->
         stream(repoImage.getRepoTags()).anyMatch{tag -> tag.contains(nameSpaceImage(configuration, requiredImage))}
-      }})
+      }}
       .reduce(true, { a, b -> a && b })
       .blockingGet()
     //all services are removed
     services.stream()
-      .map{ service -> (ServicesPluginConfiguration) injector.getInstance(configClassOf((Class) service.getClass())) }
-      .map{ serviceConfig -> nameSpaceContainer(configuration, serviceConfig.serviceName()) }
-      .allMatch{ serviceName -> dockerContainers.stream().allMatch{ container ->
+      .map{ service -> injector.getInstance(configClassOf((Class) service.getClass())) }
+      .map{ ServicesPluginConfiguration serviceConfig -> nameSpaceContainer(configuration, serviceConfig.serviceName()) }
+      .allMatch{ String serviceName -> dockerContainers.stream().allMatch{ container ->
         stream(container.getNames()).allMatch{name -> !(name.contains(nameSpaceContainer(configuration, serviceName))) }
       }}
     //all nodes have been removed

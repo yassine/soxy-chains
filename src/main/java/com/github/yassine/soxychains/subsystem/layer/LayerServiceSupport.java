@@ -1,5 +1,6 @@
 package com.github.yassine.soxychains.subsystem.layer;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.dockerjava.api.model.Network;
 import com.github.yassine.soxychains.SoxyChainsConfiguration;
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
@@ -20,6 +21,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.*;
+import static com.machinezoo.noexception.Exceptions.sneak;
 import static io.reactivex.Observable.fromFuture;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 
@@ -31,6 +33,7 @@ class LayerServiceSupport implements LayerService {
   private final LayerManager layerManager;
   private final DockerConfiguration dockerConfiguration;
   private final DockerProvider dockerProvider;
+  private final ObjectMapper objectMapper;
 
   @Override
   public Single<Boolean> add(LayerNode node) {
@@ -40,6 +43,8 @@ class LayerServiceSupport implements LayerService {
       .flatMap(docker -> {
         Maybe<Network> network = docker.findNetwork(nameSpaceLayerNetwork(dockerConfiguration, node.getLayerIndex()));
         String random = randomName();
+        String layerConfigString = objectMapper.writeValueAsString(layerConfiguration);
+        String nodeConfigString  = objectMapper.writeValueAsString(node.getNodeConfiguration());
         return docker.runContainer(
           namespaceLayerNode(dockerConfiguration, node.getLayerIndex(), random),
           nameSpaceImage(dockerConfiguration, provider.image(layerConfiguration).getName()),
@@ -51,6 +56,8 @@ class LayerServiceSupport implements LayerService {
                 ImmutableMap.<String,String>builder()
                   .putAll(Optional.ofNullable(createContainerCmd.getLabels()).orElse(ImmutableMap.of()))
                   .putAll(labelizeLayerNode(provider.getClass(), node.getLayerIndex(), soxyChainsConfiguration.getDocker(), random))
+                  .put(getConfigLabelOfLayerProvider(provider.getClass()), layerConfigString)
+                  .put(getConfigLabelOfLayerNode(provider.getClass()), nodeConfigString)
                   .build()
               );
           }
@@ -69,7 +76,7 @@ class LayerServiceSupport implements LayerService {
         fromFuture(supplyAsync(() -> docker.listContainersCmd().withLabelFilter(filterLayerNode(provider.getClass(), node.getLayerIndex(), dockerConfiguration)).exec()))
           .subscribeOn(Schedulers.io())
           .flatMap(Observable::fromIterable)
-          .filter(container -> provider.matches(container, node.getNodeConfiguration(), layerConfiguration))
+          .filter(container -> sneak().get(() -> objectMapper.readValue(container.getLabels().get(getConfigLabelOfLayerNode(provider.getClass())), node.getNodeConfiguration().getClass())).equals(node.getNodeConfiguration()))
           .map(container -> Pair.of(docker, container))
       )
       .take(1)

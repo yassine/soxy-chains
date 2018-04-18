@@ -4,10 +4,12 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.github.yassine.soxychains.subsystem.layer.AbstractLayerConfiguration;
 import lombok.Getter;
 
+import java.util.Set;
+
 @JsonTypeName("tor") @Getter
 public class TorLayerConfiguration extends AbstractLayerConfiguration{
-  private String excludeExitNodes;
-  private String excludeNodes;
-  private String entryNodes;
-  private String exitNodes;
+  private Set<String> excludeExitNodes;
+  private Set<String> excludeNodes;
+  private Set<String> entryNodes;
+  private Set<String> exitNodes;
 }

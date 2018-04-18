@@ -50,6 +50,14 @@ public class NamespaceUtils {
       : Joiner.on(CONTAINER_SEPARATOR).join(SYSTEM_NAMESPACE, configuration.getNamespace(), userContainerName);
   }
 
+  public static String getConfigLabelOfLayerProvider(Class<? extends LayerProvider> clazz){
+    return Joiner.on('.').join(clazz.getName(), "config");
+  }
+
+  public static String getConfigLabelOfLayerNode(Class<? extends LayerProvider> clazz){
+    return Joiner.on('.').join(clazz.getName(), "node","config");
+  }
+
   public static Map<String, String> labelizeLayerNode(Class<? extends LayerProvider> providerClass, int layerLevel,
                                                       DockerConfiguration dockerConfiguration, String random)
   {
