@@ -27,13 +27,13 @@ public class NamespaceUtils {
   public static String nameSpaceImage(DockerConfiguration configuration, String userImageName){
     return userImageName.startsWith(Joiner.on(IMAGE_SEPARATOR).join(SYSTEM_NAMESPACE, configuration.getNamespace()))
       ? userImageName
-      : Joiner.on(IMAGE_SEPARATOR).join(SYSTEM_NAMESPACE, configuration.getNamespace(), userImageName);
+      : Joiner.on(IMAGE_SEPARATOR).join(userImageName, configuration.getNamespace(), SYSTEM_NAMESPACE);
   }
 
   public static String nameSpaceNetwork(DockerConfiguration configuration, String userNetworkName){
     return userNetworkName.startsWith(Joiner.on(NETWORK_SEPARATOR).join(SYSTEM_NAMESPACE, configuration.getNamespace()))
       ? userNetworkName
-      : Joiner.on(NETWORK_SEPARATOR).join(SYSTEM_NAMESPACE, configuration.getNamespace(), userNetworkName);
+      : Joiner.on(NETWORK_SEPARATOR).join(userNetworkName, configuration.getNamespace(), SYSTEM_NAMESPACE);
   }
 
   public static String nameSpaceLayerNetwork(DockerConfiguration configuration, int layerIndex){
@@ -45,9 +45,9 @@ public class NamespaceUtils {
   }
 
   public static String nameSpaceContainer(DockerConfiguration configuration, String userContainerName){
-    return userContainerName.startsWith(Joiner.on(CONTAINER_SEPARATOR).join(SYSTEM_NAMESPACE, configuration.getNamespace()))
+    return userContainerName.endsWith(Joiner.on(CONTAINER_SEPARATOR).join(configuration.getNamespace(), SYSTEM_NAMESPACE))
       ? userContainerName
-      : Joiner.on(CONTAINER_SEPARATOR).join(SYSTEM_NAMESPACE, configuration.getNamespace(), userContainerName);
+      : Joiner.on(CONTAINER_SEPARATOR).join(userContainerName, configuration.getNamespace(), SYSTEM_NAMESPACE);
   }
 
   public static String getConfigLabelOfLayerProvider(Class<? extends LayerProvider> clazz){

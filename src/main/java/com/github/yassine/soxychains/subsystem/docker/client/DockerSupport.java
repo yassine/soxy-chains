@@ -67,11 +67,10 @@ class DockerSupport implements Docker {
         .flatMap( value -> new SyncDockerExecutor<>(client.createNetworkCmd(), client.configuration())
           .withSuccessFormatter( network -> format("Successfully created network '%s' to id '%s' ", networkName, network.getId()) )
           .withErrorFormatter( exception -> format("An occurred while creating network '%s' : '%s'", networkName, exception.getMessage()) )
-          .withBeforeExecute( beforeCreate.andThen( createNetworkCmd ->
-            createNetworkCmd
-              .withName(networkName)
-              .withLabels(overrideLabels(createNetworkCmd.getLabels(), labelizeNamedEntity(networkName, dockerConfiguration))
-          )))
+          .withBeforeExecute( c -> {
+              beforeCreate.accept(c);
+              c.withName(networkName).withLabels(overrideLabels(c.getLabels(), labelizeNamedEntity(networkName, dockerConfiguration)));
+          })
           .withAfterExecute( networkResponse -> Optional.ofNullable(afterCreate).ifPresent(hook -> hook.accept( networkResponse.getId() ) ))
           .execute()
           .map(CreateNetworkResponse::getId)

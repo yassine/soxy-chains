@@ -5,6 +5,8 @@ import com.github.yassine.soxychains.SoxyChainsApplication
 import com.github.yassine.soxychains.SoxyChainsConfiguration
 import com.github.yassine.soxychains.SoxyChainsModule
 import com.github.yassine.soxychains.TestUtils
+import com.github.yassine.soxychains.core.Phase
+import com.github.yassine.soxychains.core.PhaseRunner
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration
 import com.github.yassine.soxychains.subsystem.docker.image.api.DockerImage
 import com.github.yassine.soxychains.subsystem.docker.image.api.ImageRequirer
@@ -12,18 +14,27 @@ import com.github.yassine.soxychains.subsystem.layer.AbstractLayerConfiguration
 import com.github.yassine.soxychains.subsystem.layer.LayerNode
 import com.github.yassine.soxychains.subsystem.layer.LayerProvider
 import com.github.yassine.soxychains.subsystem.layer.LayerService
+import com.github.yassine.soxychains.subsystem.layer.spi.ovpn.OpenVPNConfiguration
+import com.github.yassine.soxychains.subsystem.layer.spi.ovpn.OpenVPNLayerConfiguration
+import com.github.yassine.soxychains.subsystem.layer.spi.ovpn.OpenVPNNodeConfiguration
 import com.github.yassine.soxychains.subsystem.layer.spi.tor.TorLayerConfiguration
 import com.github.yassine.soxychains.subsystem.layer.spi.tor.TorNodeConfiguration
 import com.github.yassine.soxychains.subsystem.service.ServicesPlugin
 import com.github.yassine.soxychains.subsystem.service.ServicesPluginConfiguration
+import com.google.common.base.Joiner
 import com.google.common.collect.ImmutableMap
 import com.google.common.io.Files
 import com.google.inject.AbstractModule
 import com.google.inject.Inject
 import com.google.inject.Injector
 import io.reactivex.Observable
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import org.apache.commons.csv.CSVFormat
+import org.apache.commons.csv.CSVRecord
 import org.apache.commons.io.IOUtils
 import spock.guice.UseModules
+import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Stepwise
 
@@ -50,6 +61,8 @@ class StartCommandSpec extends Specification {
   private LayerService layerService
   @Inject
   private Map<Class<? extends AbstractLayerConfiguration>, LayerProvider> providers
+  @Inject @Shared
+  private PhaseRunner phaseRunner
 
   def "it should create services docker images if missing and start required services"() {
     setup:
@@ -104,21 +117,35 @@ class StartCommandSpec extends Specification {
 
   def "it would be able to add nodes through the api" () {
     setup:
-    def layerNode     = new LayerNode(0, new TorNodeConfiguration())
+    def torLayerNode  = new LayerNode(0, new TorNodeConfiguration())
+    def ovpnConfig    = getBase64OpenvpnConfig()
+    def ovpnLayerNode = new LayerNode(1, new OpenVPNNodeConfiguration().setConfiguration(new OpenVPNConfiguration()
+                                                        .setBase64Configuration(ovpnConfig)
+                                                        .setUser("vpngate")
+                                                        .setPassword("vpngate")))
     def dockerClient  = TestUtils.dockerClient(configuration.getHosts().get(0))
-    def layerProvider = providers.get(TorLayerConfiguration.class)
-    Class<? extends LayerProvider> providerClass = (Class<? extends LayerProvider>) layerProvider.getClass()
-    def filters       = filterLayerNode(providerClass, 0, configuration)
+    def torLayerProvider = providers.get(TorLayerConfiguration.class)
+    def vpnLayerProvider = providers.get(OpenVPNLayerConfiguration.class)
+    Class<? extends LayerProvider> torLayerProviderClass = (Class<? extends LayerProvider>) torLayerProvider.getClass()
+    Class<? extends LayerProvider> vpnLayerProviderClass = (Class<? extends LayerProvider>) vpnLayerProvider.getClass()
+    def torFilters       = filterLayerNode(torLayerProviderClass, 0, configuration)
+    def ovpnFilters      = filterLayerNode(vpnLayerProviderClass, 1, configuration)
 
     when:
-    layerService.add(layerNode).blockingGet()
+    layerService.add(torLayerNode).blockingGet()
+    layerService.add(ovpnLayerNode).blockingGet()
 
     then:
+    // A tor node is present @ layer 0
     dockerClient.listContainersCmd()
-      .withLabelFilter(filters)
+      .withLabelFilter(torFilters)
       .exec().stream().findAny()
       .isPresent()
-
+    // A vpn node is present @ layer 1
+    dockerClient.listContainersCmd()
+      .withLabelFilter(ovpnFilters)
+      .exec().stream().findAny()
+      .isPresent()
   }
 
   def "it would be able to remove nodes through the api" () {
@@ -186,6 +213,27 @@ class StartCommandSpec extends Specification {
       .withLabelFilter(filters)
       .exec().stream().findAny()
       .isPresent()
+  }
+
+  def cleanupSpec (){
+    phaseRunner.runPhase(Phase.UNINSTALL).blockingGet()
+  }
+
+  def getBase64OpenvpnConfig () {
+    def responseString = new OkHttpClient.Builder().build()
+        .newCall(new Request.Builder().url("http://130.158.75.33/api/iphone").build())
+        .execute()
+        .body()
+        .string()
+    String data = Joiner.on('\n').join(
+      stream(responseString.split('\n'))
+        .filter{line -> line.contains(",")}
+        .collect(Collectors.<String>toList())
+    )
+
+    Reader reader = new StringReader(data)
+    CSVRecord record = CSVFormat.DEFAULT.withFirstRecordAsHeader().parse(reader).toList().get(0)
+    return record.get(record.size() - 1)
   }
 
   static class TestModule extends AbstractModule{

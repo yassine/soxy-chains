@@ -6,3 +6,4 @@ layers:
   - type: tor
     exit_nodes:
       - '{fr}'
+  - type: ovpn
