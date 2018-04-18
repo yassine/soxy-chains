@@ -20,14 +20,6 @@ project {
     'sonar.projectVersion' '${project.version}'
     'sonar.projectKey' 'com.github.yassine:soxy-chains'
   }
-  profiles {
-    profile {
-      id 'sonar-local'
-      properties {
-        'sonar.host.url' 'http://10.1.1.1:9000'
-      }
-    }
-  }
   dependencies {
     dependency 'com.fasterxml.jackson.core:jackson-annotations:2.8.5'
     dependency 'com.fasterxml.jackson.core:jackson-core:2.8.5'
@@ -216,6 +208,24 @@ project {
         groupId 'org.codehaus.mojo'
         artifactId 'sonar-maven-plugin'
         version '3.4.0.905'
+      }
+      plugin {
+        groupId 'org.codehaus.mojo'
+        artifactId 'properties-maven-plugin'
+        version '1.0.0'
+        executions {
+          execution {
+            phase 'initialize'
+            goals {
+              goal 'read-project-properties'
+            }
+            configuration {
+              files {
+                file '${project.basedir}/dev-sonar.properties'
+              }
+            }
+          }
+        }
       }
     }
   }
