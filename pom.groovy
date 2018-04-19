@@ -21,6 +21,7 @@ project {
     'sonar.projectKey' 'com.github.yassine:soxy-chains'
   }
   dependencies {
+    dependency 'com.ecwid.consul:consul-api:1.3.1'
     dependency 'com.fasterxml.jackson.core:jackson-annotations:2.8.5'
     dependency 'com.fasterxml.jackson.core:jackson-core:2.8.5'
     dependency 'com.fasterxml.jackson.core:jackson-databind:2.8.5'

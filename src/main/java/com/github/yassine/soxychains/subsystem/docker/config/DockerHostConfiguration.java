@@ -10,9 +10,17 @@ import java.net.URI;
 
 @Getter @ValidTLSConfigConstraint @EqualsAndHashCode(of = "uri")
 public class DockerHostConfiguration {
+  private static String LOCALHOST = "127.0.0.1";
+  private static String UNIX = "unix";
   @NotNull
   private URI uri;
   @NotNull @JsonProperty("usesTLS")
   private Boolean usesTLS = false;
   private String certPath;
+
+  public String getHostname(){
+    return uri.getScheme().equalsIgnoreCase(UNIX) ? LOCALHOST
+                                                  : uri.getHost();
+  }
+
 }

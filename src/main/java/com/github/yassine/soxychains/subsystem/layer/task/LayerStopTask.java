@@ -46,7 +46,7 @@ public class LayerStopTask implements Task{
                     .map(container -> Pair.of(docker, container))
                 ))
               .flatMapMaybe(pair -> dockerProvider.get(pair.getKey().configuration()).stopContainer(
-                  namespaceLayerNode(dockerConfiguration, Integer.parseInt(pair.getValue().getLabels().get(LAYER_PROVIDER_INDEX)), pair.getValue().getLabels().get(RANDOM_LABEL))
+                  namespaceLayerNode(dockerConfiguration, Integer.parseInt(pair.getValue().getLabels().get(LAYER_INDEX)), pair.getValue().getLabels().get(RANDOM_LABEL))
                 )
               )
               .reduce(true , (a,b) -> a && b) ;

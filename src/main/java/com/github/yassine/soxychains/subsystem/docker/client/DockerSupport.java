@@ -22,6 +22,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -208,6 +209,25 @@ class DockerSupport implements Docker {
   @Override
   public Maybe<Container> runContainer(String containerName, String image, Consumer<CreateContainerCmd> beforeCreate) {
     return runContainer(containerName, image, beforeCreate, null, null, null);
+  }
+
+  @Override
+  public Maybe<Boolean> joinNetwork(String containerId, String networkName) {
+    return findNetwork(networkName)
+      .flatMap(network -> new SyncDockerExecutor<>(client.connectToNetworkCmd()
+                                                    .withContainerId(containerId)
+                                                    .withNetworkId(network.getId()), hostConfiguration()).execute())
+      .map(Objects::nonNull);
+  }
+
+
+  @Override
+  public Maybe<Boolean> leaveNetwork(String containerId, String networkName) {
+    return findNetwork(networkName)
+      .flatMap(network -> new SyncDockerExecutor<>(client.disconnectFromNetworkCmd()
+        .withContainerId(containerId)
+        .withNetworkId(network.getId()), hostConfiguration()).execute())
+      .map(Objects::nonNull);
   }
 
   @Override

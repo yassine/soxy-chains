@@ -5,6 +5,7 @@ import com.github.dockerjava.api.model.Network;
 import com.github.yassine.soxychains.SoxyChainsConfiguration;
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
+import com.github.yassine.soxychains.subsystem.service.consul.ServiceScope;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import io.reactivex.Maybe;
@@ -21,6 +22,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.*;
+import static com.github.yassine.soxychains.subsystem.service.consul.ConsulNamingUtils.namespaceLayerService;
 import static com.machinezoo.noexception.Exceptions.sneak;
 import static io.reactivex.Observable.fromFuture;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
@@ -58,6 +60,8 @@ class LayerServiceSupport implements LayerService {
                   .putAll(labelizeLayerNode(provider.getClass(), node.getLayerIndex(), soxyChainsConfiguration.getDocker(), random))
                   .put(getConfigLabelOfLayerProvider(provider.getClass()), layerConfigString)
                   .put(getConfigLabelOfLayerNode(provider.getClass()), nodeConfigString)
+                  .put(LAYER_NODE_LABEL, "")
+                  .put(LAYER_SERVICE_KEY_LABEL, namespaceLayerService(node.getLayerIndex(), ServiceScope.LOCAL))
                   .build()
               );
           }

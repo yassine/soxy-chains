@@ -1,5 +1,7 @@
 package com.github.yassine.soxychains.subsystem.layer;
 
+import com.ecwid.consul.v1.ConsulClient;
+import com.ecwid.consul.v1.agent.model.NewService;
 import com.github.yassine.soxychains.SoxyChainsConfiguration;
 import com.github.yassine.soxychains.subsystem.docker.client.Docker;
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
@@ -13,10 +15,11 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.filterLayerNode;
 import static io.reactivex.Observable.fromIterable;
+import static io.reactivex.Single.fromFuture;
+import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 @RequiredArgsConstructor(onConstructor = @__(@Inject), access = AccessLevel.PUBLIC)
 public class LayerManager {
@@ -30,7 +33,7 @@ public class LayerManager {
    * @param layerIndex
    * @return
    */
-  Maybe<Docker> findCapableHost(final int layerIndex){
+  public Maybe<Docker> findCapableHost(final int layerIndex){
     AbstractLayerConfiguration layerConfiguration = soxyChainsConfiguration.getLayers().get(layerIndex);
     LayerProvider provider = layerProviders.get(layerConfiguration.getClass());
     return Maybe.just(soxyChainsConfiguration.getLayers().get(layerIndex))
@@ -44,7 +47,7 @@ public class LayerManager {
   }
 
   private Single<Boolean> isCapable(SoxyChainsDockerClient client, AbstractLayerConfiguration layerConfiguration, LayerProvider provider, int layerIndex){
-    return Single.fromFuture(CompletableFuture.supplyAsync(() -> {
+    return fromFuture(supplyAsync(() -> {
       int nodeCount = client.listContainersCmd()
         .withLabelFilter(
           filterLayerNode(provider.getClass(), layerIndex, soxyChainsConfiguration.getDocker())

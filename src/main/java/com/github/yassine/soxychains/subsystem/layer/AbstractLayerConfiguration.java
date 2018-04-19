@@ -13,9 +13,10 @@ import java.io.Serializable;
 )
 public abstract class AbstractLayerConfiguration implements Serializable{
   protected int maxNodes    = 50;
-  protected int clusterServicePort = 8080;
-  protected int localServicePort   = 8081;
+  protected int clusterServicePort = 1080;
+  protected int localServicePort   = 1081;
+  protected int healthCheckPort    = 1082;
   protected double readyRatio = 0.5;
-  protected String healthCheckInterval = "45s";
-  protected String healthCheckTimeout  = "120s";
+  protected Integer healthCheckInterval = 120;//seconds
+  protected Integer healthCheckTimeout  = 120;//seconds
 }

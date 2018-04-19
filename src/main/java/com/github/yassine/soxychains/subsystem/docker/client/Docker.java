@@ -42,6 +42,8 @@ public interface Docker {
   Maybe<Container> runContainer(String containerName,
                                 String image,
                                 Consumer<CreateContainerCmd> beforeCreate);
+  Maybe<Boolean> joinNetwork(String containerId, String network);
+  Maybe<Boolean> leaveNetwork(String containerId, String networkName);
   Maybe<Boolean> stopContainer(String containerName,
                                Consumer<StopContainerCmd> beforeStop,
                                Consumer<String> afterStop,

@@ -75,7 +75,7 @@ public class PluginsConfigDeserializer<CONFIG extends PluginSetConfiguration<?>>
         Constructor<? extends PluginConfiguration> constructor = (Constructor<? extends PluginConfiguration>) Arrays.stream(pluginConfigClass.getConstructors())
           .filter(constr -> constr.getParameterCount() == 0)
           .findAny()
-          .orElseThrow( () -> new SoxyChainsException(format("'%s' as implementation of '%s' contract, must have a no-arg constructor.", pluginClass.getName(), PluginConfiguration.class)) );
+          .orElseThrow( () -> new SoxyChainsException(format("'%s' as implementation of '%s' contract, must have a no-arg constructor.", pluginConfigClass.getName(), PluginConfiguration.class)) );
         PluginConfiguration config = sneak().get(constructor::newInstance);
         builder.put(pluginClass, config);
       });
@@ -83,9 +83,9 @@ public class PluginsConfigDeserializer<CONFIG extends PluginSetConfiguration<?>>
   }
 
   @SneakyThrows
-  private <CONFIG extends PluginConfiguration> CONFIG safeRead(ObjectMapper mapper, Class<? extends Plugin> pluginClass, String value) {
-    CONFIG config = (CONFIG) mapper.readValue(value, resolveRawArgument(Plugin.class, pluginClass));
-    return config != null ? config : defaultConfig(pluginClass);
+  private <PLUGIN_CONFIG extends PluginConfiguration> PLUGIN_CONFIG safeRead(ObjectMapper mapper, Class pluginClass, String value) {
+    PLUGIN_CONFIG config = (PLUGIN_CONFIG) mapper.readValue(value, resolveRawArgument(Plugin.class, (Class<? extends Plugin<PLUGIN_CONFIG>>) pluginClass));
+    return config != null ? config : defaultConfig((Class<? extends Plugin<PLUGIN_CONFIG>>) pluginClass);
   }
 
   private boolean equalKeys(PropertyNamingStrategy propertyNamingStrategy, String foundKey, Class<? extends Plugin> pluginClass){
@@ -104,6 +104,5 @@ public class PluginsConfigDeserializer<CONFIG extends PluginSetConfiguration<?>>
     Iterable<T> iterable = () -> iterator;
     return StreamSupport.stream(iterable.spliterator(), false);
   }
-
 
 }

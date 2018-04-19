@@ -22,7 +22,9 @@ public class NamespaceUtils {
   public static final String NAMESPACE_LABEL      = SYSTEM_LABEL+".namespace";
   public static final String RANDOM_LABEL         = SYSTEM_LABEL+".random";
   public static final String LAYER_PROVIDER_LABEL = SYSTEM_LABEL+".layer.provider";
-  public static final String LAYER_PROVIDER_INDEX = SYSTEM_LABEL+".layer.index";
+  public static final String LAYER_INDEX          = SYSTEM_LABEL+".layer.index";
+  public static final String LAYER_SERVICE_KEY_LABEL = SYSTEM_LABEL+".layer.service_key";
+  public static final String LAYER_NODE_LABEL     = SYSTEM_LABEL+".layer.node";
 
   public static String nameSpaceImage(DockerConfiguration configuration, String userImageName){
     return userImageName.startsWith(Joiner.on(IMAGE_SEPARATOR).join(SYSTEM_NAMESPACE, configuration.getNamespace()))
@@ -62,7 +64,7 @@ public class NamespaceUtils {
                                                       DockerConfiguration dockerConfiguration, String random)
   {
     return ImmutableMap.of(
-      LAYER_PROVIDER_INDEX, Integer.toString(layerLevel),
+      LAYER_INDEX, Integer.toString(layerLevel),
       LAYER_PROVIDER_LABEL, providerClass.getName(),
       SYSTEM_LABEL, "",
       NAMESPACE_LABEL, dockerConfiguration.getNamespace(),
@@ -82,7 +84,7 @@ public class NamespaceUtils {
   public static Map<String, String> filterLayerNode(Class<? extends LayerProvider> providerClass, int layerLevel, DockerConfiguration dockerConfiguration)
   {
     return ImmutableMap.of(
-      LAYER_PROVIDER_INDEX, Integer.toString(layerLevel),
+      LAYER_INDEX, Integer.toString(layerLevel),
       LAYER_PROVIDER_LABEL, providerClass.getName(),
       SYSTEM_LABEL, "",
       NAMESPACE_LABEL, dockerConfiguration.getNamespace()
@@ -100,5 +102,7 @@ public class NamespaceUtils {
   public static String soxyDriverName(DockerConfiguration dockerConfiguration){
     return Joiner.on("__").join(dockerConfiguration.getNamespace(), SOXY_DRIVER_NAME);
   }
+
+
 
 }

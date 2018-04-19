@@ -9,8 +9,8 @@ public class PluginUtils {
   private PluginUtils() {}
 
   @SneakyThrows
-  public static <CONFIG extends PluginConfiguration> CONFIG defaultConfig(Class <? extends Plugin> pluginContract){
-    return (CONFIG) (resolveRawArgument(Plugin.class, pluginContract)).newInstance();
+  public static <CONFIG extends PluginConfiguration> CONFIG defaultConfig(Class <? extends Plugin<CONFIG>> pluginContract){
+    return configClassOf(pluginContract).newInstance();
   }
 
   public static <CONFIG extends PluginConfiguration> Class<CONFIG> configClassOf(Class <? extends Plugin<CONFIG>> pluginContract){

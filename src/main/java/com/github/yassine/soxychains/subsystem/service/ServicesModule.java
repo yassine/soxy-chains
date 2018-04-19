@@ -59,7 +59,8 @@ public class ServicesModule extends AbstractModule{
   static ServicesConfiguration defaultServicesConfiguration(){
     ImmutableMap.Builder<Class<? extends Plugin<ServicesPluginConfiguration>>, ServicesPluginConfiguration> builder = ImmutableMap.builder();
     GuiceUtils.loadSPIClasses(ServicesPlugin.class).stream()
-      .forEach(pluginClass -> builder.put((Class<? extends Plugin<ServicesPluginConfiguration>>) pluginClass, PluginUtils.defaultConfig(pluginClass)));
+      .map(clazz -> (Class<? extends Plugin<ServicesPluginConfiguration>>) clazz)
+      .forEach(pluginClass -> builder.put(pluginClass, PluginUtils.defaultConfig(pluginClass)));
     return new ServicesConfiguration(builder.build());
   }
 }

@@ -48,8 +48,8 @@ public class ServicesStopTask implements Task{
               .flatMapMaybe(service ->
                 //stop and remove the container that relates to the given service
                 docker.stopContainer(nameSpaceContainer(dockerConfiguration, configOf(service).serviceName()))
-                      .defaultIfEmpty(false)
-                      .subscribeOn(Schedulers.io())
+                  .defaultIfEmpty(false)
+                  .subscribeOn(Schedulers.io())
               )
               // reduce the results as a single boolean value
               .reduce(true, (a,b) -> a && b).blockingGet())
