@@ -212,11 +212,14 @@ class DockerSupport implements Docker {
   }
 
   @Override
-  public Maybe<Boolean> joinNetwork(String containerId, String networkName) {
+  public Maybe<Boolean> joinNetwork(Container container, String networkName) {
     return findNetwork(networkName)
       .flatMap(network -> new SyncDockerExecutor<>(client.connectToNetworkCmd()
-                                                    .withContainerId(containerId)
-                                                    .withNetworkId(network.getId()), hostConfiguration()).execute())
+                                                    .withContainerId(container.getId())
+                                                    .withNetworkId(network.getId()), hostConfiguration())
+                            .withSuccessFormatter(v -> format("Successfully made container '%s' join network '%s'", container.getNames()[0], network.getName()))
+                            .withErrorFormatter(e -> format("Failed to make container '%s' join network '%s'", container.getNames()[0], network.getName()))
+                            .execute())
       .map(Objects::nonNull);
   }
 

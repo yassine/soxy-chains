@@ -1,8 +1,7 @@
 #!/bin/sh
-docker events --filter "label=${NODE_LABEL}" --filter "label=${NAMESPACE_KEY}=${NAMESPACE}" --filter 'type=container' --filter 'event=kill' --format='json' | while read event
+docker events --filter "label=${NODE_LABEL}" --filter "label=${NAMESPACE_KEY}=${NAMESPACE}" --filter 'type=container' --filter 'event=start' --format '{{.ID}}' | while read container_id
 do
-  echo "detected node service kill : $event"
-  container_id=`echo ${event} | jq '.id'`
   container_name=`docker inspect --format='{{.Name}}' ${container_id}`
-  `curl -H "Content-Type: application/json" -X PUT http://${CONSUL_HOST}:${CONSUL_PORT}/agent/service/deregister/${container_name}`
+  consul_host=${CONSUL_HOST}
+  `curl -H "Content-Type: application/json" -X PUT http://${consul_host}:${CONSUL_PORT}/v1/agent/service/deregister/${container_name}`
 done

@@ -4,6 +4,7 @@ import com.github.yassine.soxychains.SoxyChainsApplication
 import com.github.yassine.soxychains.SoxyChainsModule
 import com.github.yassine.soxychains.TestUtils
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration
+import com.github.yassine.soxychains.subsystem.docker.image.api.DockerImage
 import com.github.yassine.soxychains.subsystem.docker.image.api.ImageRequirer
 import com.google.common.io.Files
 import com.google.inject.AbstractModule
@@ -37,11 +38,12 @@ class InstallCommandSpec extends Specification {
     expect:
     //all the required images are created
     Observable.fromIterable(imageRequirers)
-      .flatMap({requirer -> requirer.require()})
-      .map({requiredImage -> requiredImage.getName()})
-      .map({requiredImage -> dockerImages.stream().anyMatch{ repoImage ->
-        stream(repoImage.getRepoTags()).anyMatch{tag -> tag.contains(nameSpaceImage(configuration, requiredImage))}
-      }})
+      .flatMap{ requirer -> requirer.require() }
+      .map{ DockerImage requiredImage -> nameSpaceImage(configuration, requiredImage.getName()) }
+      .map{ String requiredImageName -> dockerImages.stream().anyMatch{ repoImage ->
+          stream(repoImage.getRepoTags()).anyMatch{tag -> tag.contains(requiredImageName)}
+        }
+      }
       .reduce(true, { a, b -> a && b })
       .blockingGet()
   }
@@ -58,11 +60,11 @@ class InstallCommandSpec extends Specification {
 
     expect:
     Observable.fromIterable(imageRequirers)
-      .flatMap{requirer -> requirer.require()}
-      .map({requiredImage -> requiredImage.getName()})
-      .map({requiredImage -> dockerImages.stream().allMatch{ repoImage ->
-        stream((String []) repoImage.getRepoTags()).noneMatch{tag -> tag.contains(nameSpaceImage(configuration, requiredImage))}
-      }})
+      .flatMap{ requirer -> requirer.require() }
+      .map{ DockerImage requiredImage -> nameSpaceImage(configuration, requiredImage.getName()) }
+      .map{ String requiredImageName -> dockerImages.stream().allMatch{ repoImage ->
+        stream((String []) repoImage.getRepoTags()).noneMatch{tag -> tag.contains(nameSpaceImage(configuration, requiredImageName))}
+      }}
       .reduce(true, { a, b -> a && b })
       .blockingGet()
   }

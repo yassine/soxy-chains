@@ -1,7 +1,6 @@
 package com.github.yassine.soxychains.subsystem.docker.networking.task;
 
 import com.github.yassine.artifacts.guice.scheduling.DependsOn;
-import com.github.yassine.soxychains.SoxyChainsConfiguration;
 import com.github.yassine.soxychains.core.Phase;
 import com.github.yassine.soxychains.core.RunOn;
 import com.github.yassine.soxychains.core.Task;
@@ -10,13 +9,14 @@ import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration
 import com.github.yassine.soxychains.subsystem.docker.networking.NetworkingConfiguration;
 import com.google.auto.service.AutoService;
 import com.google.inject.Inject;
-import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.schedulers.Schedulers;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.apache.commons.lang.StringUtils;
+
+import java.util.Objects;
 
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.*;
 import static io.reactivex.Observable.fromIterable;
@@ -29,26 +29,31 @@ public class NetworkingStartupTask implements Task{
   private final DockerProvider dockerProvider;
   private final DockerConfiguration dockerConfiguration;
   private final NetworkingConfiguration networkingConfiguration;
-  private final SoxyChainsConfiguration soxyChainsConfiguration;
 
   @Override @SneakyThrows
   public Single<Boolean> execute() {
-    return Observable.concat(
-      fromIterable(soxyChainsConfiguration.getLayers())
-        .flatMap(layerConfiguration ->
-          fromIterable(dockerProvider.dockers())
-            .flatMapMaybe(
-                docker -> docker.createNetwork(nameSpaceLayerNetwork(dockerConfiguration, soxyChainsConfiguration.getLayers().indexOf(layerConfiguration)),
-                createNetworkCmd -> createNetworkCmd.withDriver(soxyDriverName(dockerConfiguration))
-              ).subscribeOn(Schedulers.single())
-            )
-        ).map(StringUtils::isNotEmpty),
+    return fromIterable(dockerProvider.dockers())
+      .flatMapMaybe(docker -> docker.createNetwork(
+        nameSpaceNetwork(dockerConfiguration, networkingConfiguration.getNetworkName()),
+        createNetworkCmd -> createNetworkCmd.withDriver(soxyDriverName(dockerConfiguration))
+      ).subscribeOn(Schedulers.single()).map(StringUtils::isNotEmpty).defaultIfEmpty(false))
+    .reduce(true, (a, b) -> a && b)
+    //start the platform DNS server
+    .flatMap(result ->
       fromIterable(dockerProvider.dockers())
-        .flatMapMaybe(docker -> docker.createNetwork(
-          nameSpaceNetwork(dockerConfiguration, networkingConfiguration.getNetworkName()),
-          createNetworkCmd -> createNetworkCmd.withDriver(soxyDriverName(dockerConfiguration))
-        ).subscribeOn(Schedulers.single()).map(StringUtils::isNotEmpty).defaultIfEmpty(false))
-    ).reduce(true, (a, b) -> a && b);
+        .flatMapSingle(docker ->
+          docker.runContainer(
+            nameSpaceContainer(dockerConfiguration, networkingConfiguration.getDnsConfiguration().getServiceName()),
+            nameSpaceImage(dockerConfiguration, networkingConfiguration.getDnsConfiguration().getImage()),
+            createContainerCmd ->{
+              // make the dns server join the main network, so that it is accessible by services
+              createContainerCmd.withNetworkMode(nameSpaceNetwork(dockerConfiguration, networkingConfiguration.getNetworkName()));
+              createContainerCmd.withLabels(labelizeNamedEntity(networkingConfiguration.getDnsConfiguration().getServiceName(), dockerConfiguration));
+            }
+          ).map(Objects::nonNull)
+          .toSingle(false)
+        ).reduce(result, (a,b) -> a && b)
+    );
   }
 
 }

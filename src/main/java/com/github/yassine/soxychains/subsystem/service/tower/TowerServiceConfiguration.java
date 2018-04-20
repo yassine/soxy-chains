@@ -7,7 +7,7 @@ import java.util.List;
 
 public class TowerServiceConfiguration implements ServicesPluginConfiguration {
 
-  private static final String NAME = "tower";
+  public static final String NAME = "tower";
   @Override
   public String serviceName() {
     return NAME;

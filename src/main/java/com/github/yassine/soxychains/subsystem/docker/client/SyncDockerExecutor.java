@@ -23,8 +23,8 @@ class SyncDockerExecutor<RESULT, CMD extends SyncDockerCmd<RESULT> > {
   private final DockerHostConfiguration configuration;
   private Function<RESULT, String> successFormatter  = result -> format("Successfully execute command '%s'", SyncDockerExecutor.this.cmd.getClass().getSimpleName());
   private Function<Throwable, String> errorFormatter = exception -> format("Error occurred while executing command '%s' : %s", SyncDockerExecutor.this.cmd.getClass().getSimpleName(), exception.getMessage());
-  private Optional<Consumer<CMD>> beforeExecute;
-  private Optional<Consumer<RESULT>> afterExecute;
+  private Optional<Consumer<CMD>> beforeExecute = Optional.empty();
+  private Optional<Consumer<RESULT>> afterExecute = Optional.empty();
 
   @SuppressWarnings("unchecked")
   public Maybe<RESULT> execute(){
@@ -34,7 +34,7 @@ class SyncDockerExecutor<RESULT, CMD extends SyncDockerCmd<RESULT> > {
       try{
         beforeExecute.ifPresent(before -> before.accept(cmd));
         RESULT result = cmd.exec();
-        successFormatter.apply(result);
+        log.info(successFormatter.apply(result));
         afterExecute.ifPresent(after -> after.accept(result));
         if(result == null){
           return Maybe.<RESULT>empty();

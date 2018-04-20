@@ -32,7 +32,7 @@ public interface Docker {
                                Consumer<String> afterRemove);
   Maybe<Boolean> removeNetwork(String networkName);
   Maybe<Network> findNetwork(String networkName);
-  Maybe<Container> findContainer(String networkName);
+  Maybe<Container> findContainer(String containerName);
   Maybe<Container> runContainer(String containerName,
                                 String image,
                                 Consumer<CreateContainerCmd> beforeCreate,
@@ -42,7 +42,7 @@ public interface Docker {
   Maybe<Container> runContainer(String containerName,
                                 String image,
                                 Consumer<CreateContainerCmd> beforeCreate);
-  Maybe<Boolean> joinNetwork(String containerId, String network);
+  Maybe<Boolean> joinNetwork(Container container, String network);
   Maybe<Boolean> leaveNetwork(String containerId, String networkName);
   Maybe<Boolean> stopContainer(String containerName,
                                Consumer<StopContainerCmd> beforeStop,

@@ -48,8 +48,8 @@ public class FluentUtils {
           }
         }
       }
-      throw new SoxyChainsException(errorMessage.apply(ai.get()));
-    })).onErrorComplete();
+      throw new SoxyChainsException(ofNullable(errorMessage).map(msg -> errorMessage.apply(maxRetries - ai.get())).orElse(""));
+    }));
   }
 
   //default @ 15 retries each 1 second

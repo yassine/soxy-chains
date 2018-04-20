@@ -23,6 +23,8 @@ public class LayerModule extends AbstractModule{
         mapBinder.addBinding(configClass).to(clazz);
       });
     loadSPIClasses(LayerProvider.class).forEach(clazz -> layerProviders.addBinding().to(clazz));
+    Multibinder<LayerObserver> layerObservers = Multibinder.newSetBinder(binder(), LayerObserver.class);
+    loadSPIClasses(LayerObserver.class).forEach(clazz -> layerObservers.addBinding().to(clazz));
     bind(LayerService.class).to(LayerServiceSupport.class);
     bind(LayerManager.class).in(Singleton.class);
   }

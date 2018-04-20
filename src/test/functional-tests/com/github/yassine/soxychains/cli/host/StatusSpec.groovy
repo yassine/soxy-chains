@@ -8,10 +8,10 @@ import com.google.common.io.Files
 import org.apache.commons.io.IOUtils
 import spock.lang.Specification
 
+import java.util.stream.Collector
 import java.util.stream.Collectors
 
 import static java.util.Arrays.stream
-
 class StatusSpec extends Specification {
   def "run: it should output the status of the docker hosts"() {
     setup:
@@ -24,10 +24,9 @@ class StatusSpec extends Specification {
     ObjectMapper mapper = new ObjectMapper()
     mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
     def outputStatuses = mapper.readValue(output, Status.HostStatus[].class)
-
     expect:
-    stream(outputStatuses).filter({ status -> status.isUp()}).filter({status -> status.getHost() == null }).collect(Collectors.toList()).size() == 1
-    stream(outputStatuses).filter({ status -> !status.isUp()}).collect(Collectors.toList()).size() == 1
+    stream(outputStatuses).filter({ status -> status.isUp()}).filter({status -> status.getHost() == null }).collect(Collectors.toList() as Collector<? super Status.HostStatus, Object, Object>).size() == 1
+    stream(outputStatuses).filter({ status -> !status.isUp()}).collect(Collectors.toList() as Collector<? super Status.HostStatus, Object, Object>).size() == 1
     outputStatuses.length == 2
   }
 }

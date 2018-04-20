@@ -44,7 +44,7 @@ import static com.github.yassine.soxychains.plugin.PluginUtils.configClassOf
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.*
 import static java.util.Arrays.stream
 
-@Stepwise @UseModules(TestModule)
+@UseModules(TestModule) //@Stepwise
 class StartCommandSpec extends Specification {
 
   @Inject
@@ -174,6 +174,16 @@ class StartCommandSpec extends Specification {
 
   }
 
+  def "nodes are automatically published in consul" () {
+    expect:
+    true
+  }
+
+  def "gobetween services backends are configured" () {
+    expect:
+    true
+  }
+
   def "it should remove all the services containers but keep their images"() {
     setup:
     File workDir = Files.createTempDir()
@@ -230,7 +240,6 @@ class StartCommandSpec extends Specification {
         .filter{line -> line.contains(",")}
         .collect(Collectors.<String>toList())
     )
-
     Reader reader = new StringReader(data)
     CSVRecord record = CSVFormat.DEFAULT.withFirstRecordAsHeader().parse(reader).toList().get(0)
     return record.get(record.size() - 1)

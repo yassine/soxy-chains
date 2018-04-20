@@ -1,7 +1,5 @@
 package com.github.yassine.soxychains.subsystem.layer;
 
-import com.ecwid.consul.v1.ConsulClient;
-import com.ecwid.consul.v1.agent.model.NewService;
 import com.github.yassine.soxychains.SoxyChainsConfiguration;
 import com.github.yassine.soxychains.subsystem.docker.client.Docker;
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;

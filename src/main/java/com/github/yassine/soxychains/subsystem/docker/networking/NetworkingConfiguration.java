@@ -8,4 +8,6 @@ import javax.validation.constraints.NotNull;
 public class NetworkingConfiguration {
   @NotNull
   private String networkName = "soxy-network";
+  @NotNull
+  private DNSConfiguration dnsConfiguration = new DNSConfiguration();
 }

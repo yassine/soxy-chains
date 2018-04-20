@@ -14,15 +14,20 @@ import lombok.RequiredArgsConstructor;
 import java.net.URI;
 
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.SOXY_DRIVER_NAME;
+import static com.github.yassine.soxychains.subsystem.docker.networking.DNSConfiguration.DNS_CONFIG_ID;
 
 @AutoService(ImageRequirer.class) @RequiredArgsConstructor(onConstructor = @__(@Inject), access = AccessLevel.PUBLIC)
 public class NetworkingImageRequirer implements ImageRequirer{
   private final DockerConfiguration dockerConfiguration;
   @Override
   public Observable<DockerImage> require() {
-    return Observable.just(new DockerImage(SOXY_DRIVER_NAME,
-      URI.create(Joiner.on("/").join("classpath:/", getClass().getPackage().getName().replaceAll("\\.","/"), "soxy_driver")),
-      ImmutableMap.of("config", dockerConfiguration)
-    ));
+    return Observable.fromArray(
+      new DockerImage(SOXY_DRIVER_NAME,
+          URI.create(Joiner.on("/").join("classpath:/", getClass().getPackage().getName().replaceAll("\\.","/"), "soxy_driver")),
+          ImmutableMap.of("config", dockerConfiguration)),
+      new DockerImage(DNS_CONFIG_ID,
+        URI.create(Joiner.on("/").join("classpath:/", getClass().getPackage().getName().replaceAll("\\.","/"), DNS_CONFIG_ID)),
+        ImmutableMap.of("config", dockerConfiguration.getNetworkingConfiguration().getDnsConfiguration()))
+    );
   }
 }

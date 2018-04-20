@@ -5,6 +5,7 @@ import com.github.dockerjava.api.model.Network;
 import com.github.yassine.soxychains.SoxyChainsConfiguration;
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
+import com.github.yassine.soxychains.subsystem.docker.networking.DnsHelper;
 import com.github.yassine.soxychains.subsystem.service.consul.ServiceScope;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -14,19 +15,19 @@ import io.reactivex.Single;
 import io.reactivex.schedulers.Schedulers;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.*;
 import static com.github.yassine.soxychains.subsystem.service.consul.ConsulNamingUtils.namespaceLayerService;
 import static com.machinezoo.noexception.Exceptions.sneak;
 import static io.reactivex.Observable.fromFuture;
+import static io.reactivex.Observable.fromIterable;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 
+@Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Inject), access = AccessLevel.PUBLIC)
 class LayerServiceSupport implements LayerService {
 
@@ -36,6 +37,8 @@ class LayerServiceSupport implements LayerService {
   private final DockerConfiguration dockerConfiguration;
   private final DockerProvider dockerProvider;
   private final ObjectMapper objectMapper;
+  private final DnsHelper dnsHelper;
+  private final Set<LayerObserver> layerObservers;
 
   @Override
   public Single<Boolean> add(LayerNode node) {
@@ -64,6 +67,7 @@ class LayerServiceSupport implements LayerService {
                   .put(LAYER_SERVICE_KEY_LABEL, namespaceLayerService(node.getLayerIndex(), ServiceScope.LOCAL))
                   .build()
               );
+            dnsHelper.getAddressAtLayer(docker, node.getLayerIndex()).map(createContainerCmd::withDns).toObservable().blockingSubscribe();
           }
         ).map(Objects::nonNull);
       })
@@ -88,6 +92,40 @@ class LayerServiceSupport implements LayerService {
                               .stopContainer(namespaceLayerNode(dockerConfiguration, node.getLayerIndex(), pair.getValue().getLabels().get(RANDOM_LABEL))))
       .take(1)
       .single(false);
+  }
+
+  public Single<Boolean> addLayer(int index, AbstractLayerConfiguration layerConfiguration){
+    //create a network
+    return fromIterable(dockerProvider.dockers())
+      .flatMapMaybe(docker -> docker.createNetwork(nameSpaceLayerNetwork(dockerConfiguration, index),
+              createNetworkCmd -> createNetworkCmd.withDriver(soxyDriverName(dockerConfiguration)))
+        .flatMap(networkId ->
+          //create the layer network
+          docker.findNetwork(nameSpaceLayerNetwork(dockerConfiguration, index))
+            .flatMapSingle(network -> fromIterable(layerObservers)
+              // notify the plugins
+              .flatMapMaybe(plugin -> plugin.onLayerAdd(index, layerConfiguration, network)
+                                        .subscribeOn(Schedulers.io()))
+              .reduce(true, (a,b) -> a && b)
+            ).toMaybe()
+        )).reduce(true, (a,b) -> a && b);
+  }
+
+  public Single<Boolean> removeLayer(int index, AbstractLayerConfiguration layerConfiguration){
+    return fromIterable(dockerProvider.dockers())
+      .flatMapMaybe(docker ->
+        docker.findNetwork(nameSpaceLayerNetwork(dockerConfiguration, index)).toObservable()
+          .flatMap(network -> fromIterable(layerObservers)
+            // notify the plugins
+            .flatMapMaybe(plugin -> plugin.onLayerPreRemove(index, layerConfiguration, network).subscribeOn(Schedulers.io()))
+            .defaultIfEmpty(true)
+          ).reduce(true, (a,b) -> a && b)
+          //remove the network
+          .flatMapMaybe(result -> docker.removeNetwork(nameSpaceLayerNetwork(dockerConfiguration, index)).subscribeOn(Schedulers.io()))
+          .defaultIfEmpty(true)
+      )
+      .defaultIfEmpty(true)
+      .reduce(true, (a,b) -> a && b);
   }
 
   private String randomName(){

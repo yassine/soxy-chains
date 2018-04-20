@@ -15,9 +15,9 @@ then
 fi
 IP_ADDRESS=`curl -s --socks5 127.0.0.1:1080 https://api.ipify.org/?format=text`
 IS_VALID_IP=$(valid_ip ${IP_ADDRESS})
-if [ ${IS_VALID_IP} ]
+if [ ${IS_VALID_IP} -eq 0 ]
 then
-  exit 0
-else
   exit 2
+else
+  exit 0
 fi
