@@ -24,23 +24,20 @@ import com.github.yassine.soxychains.subsystem.service.ServicesPlugin
 import com.github.yassine.soxychains.subsystem.service.ServicesPluginConfiguration
 import com.github.yassine.soxychains.subsystem.service.consul.ConsulProvider
 import com.github.yassine.soxychains.subsystem.service.consul.ServiceScope
-import com.google.common.base.Joiner
+import com.github.yassine.soxychains.subsystem.service.gobetween.GobetweenProvider
 import com.google.common.collect.ImmutableMap
 import com.google.common.io.Files
 import com.google.inject.AbstractModule
 import com.google.inject.Inject
 import com.google.inject.Injector
 import io.reactivex.Observable
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import org.apache.commons.csv.CSVFormat
-import org.apache.commons.csv.CSVRecord
 import org.apache.commons.io.IOUtils
 import spock.guice.UseModules
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Stepwise
 
+import java.util.stream.Collector
 import java.util.stream.Collectors
 
 import static com.github.yassine.soxychains.plugin.PluginUtils.configClassOf
@@ -69,6 +66,8 @@ class StartCommandSpec extends Specification {
   private Map<Class<? extends AbstractLayerConfiguration>, LayerProvider> providers
   @Inject
   private ConsulProvider consulProvider
+  @Inject
+  private GobetweenProvider gobetweenProvider
   @Inject @Shared
   private PhaseRunner phaseRunner
 
@@ -126,7 +125,7 @@ class StartCommandSpec extends Specification {
   def "it would be able to add nodes through the api" () {
     setup:
     def torLayerNode  = new LayerNode(0, new TorNodeConfiguration())
-    def ovpnConfig    = getBase64OpenvpnConfig()
+    def ovpnConfig    = TestUtils.findOnlineVPNConfiguration()
     def ovpnLayerNode = new LayerNode(1, new OpenVPNNodeConfiguration().setConfiguration(new OpenVPNConfiguration()
                                                         .setBase64Configuration(ovpnConfig)
                                                         .setUser("vpngate")
@@ -190,15 +189,30 @@ class StartCommandSpec extends Specification {
     //local & cluster services exists
     consul.getCatalogServices(QueryParams.DEFAULT).getValue()
       .keySet().containsAll(
-        range(0, soxyChainsConfiguration.getLayers().size())
-          .boxed()
+        range(0, soxyChainsConfiguration.getLayers().size()).boxed()
           .flatMap{ index -> asList(namespaceLayerService(index, ServiceScope.LOCAL), namespaceLayerService(index, ServiceScope.CLUSTER)).stream() }
           .collect(Collectors.toList())
       )
-
   }
 
   def "gobetween services backends are configured" () {
+    setup:
+    def gobetween = gobetweenProvider.getClient(configuration.getHosts().get(0))
+    expect:
+    gobetween.getServers().keySet()
+      .containsAll(
+        range(0, soxyChainsConfiguration.getLayers().size()).boxed()
+          .flatMap{index -> stream(ServiceScope.values()).map{serviceScope -> namespaceLayerService(index, serviceScope)} }
+          .collect(Collectors.toList() as Collector<? super Object, Object, String>)
+      )
+  }
+
+  def "layers networks should be correctly configure" () {
+    expect:
+    true
+  }
+
+  def "services status should be 'passing' after a resonable amount of time" () {
     expect:
     true
   }
@@ -246,22 +260,6 @@ class StartCommandSpec extends Specification {
 
   def cleanupSpec (){
     phaseRunner.runPhase(Phase.UNINSTALL).blockingGet()
-  }
-
-  def getBase64OpenvpnConfig () {
-    def responseString = new OkHttpClient.Builder().build()
-        .newCall(new Request.Builder().url("http://130.158.75.33/api/iphone").build())
-        .execute()
-        .body()
-        .string()
-    String data = Joiner.on('\n').join(
-      stream(responseString.split('\n'))
-        .filter{line -> line.contains(",")}
-        .collect(Collectors.<String>toList())
-    )
-    Reader reader = new StringReader(data)
-    CSVRecord record = CSVFormat.DEFAULT.withFirstRecordAsHeader().parse(reader).toList().get(0)
-    return record.get(record.size() - 1)
   }
 
   static class TestModule extends AbstractModule{

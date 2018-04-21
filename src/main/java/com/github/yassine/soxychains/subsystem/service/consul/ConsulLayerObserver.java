@@ -53,13 +53,13 @@ public class ConsulLayerObserver implements LayerObserver {
               NewService.Check serviceCheck = new NewService.Check();
               service.setName(namespaceLayerService(index, ServiceScope.CLUSTER));
               service.setAddress(host);
-              service.setPort(portShift(index, layerConfiguration.getClusterServicePort()));
+              service.setPort(portShift(index, layerConfiguration.getLocalServicePort()));
               service.setId(formatServiceId(namespaceLayerService(index, ServiceScope.CLUSTER), host));
               service.setTags(ImmutableList.of(service.getName()));
               service.setCheck(serviceCheck);
-              serviceCheck.setScript(String.format("/consul/config/host-health-check.sh %s %s %s", host, consulConfiguration.getServiceName(), namespaceLayerService(index, ServiceScope.LOCAL)));
-              serviceCheck.setInterval(String.format("%ss",layerConfiguration.getHealthCheckInterval()));
-              serviceCheck.setTimeout(String.format("%ss",layerConfiguration.getHealthCheckTimeout()));
+              serviceCheck.setScript(String.format("/consul/config/host-health-check.sh %s %s %s", host, consulConfiguration.getServicePort(), namespaceLayerService(index, ServiceScope.LOCAL)));
+              serviceCheck.setInterval("15s");
+              serviceCheck.setTimeout("15s");
               consul.agentServiceRegister(service);
             }
             return true;

@@ -7,7 +7,7 @@ import com.github.yassine.soxychains.core.RunOn;
 import com.github.yassine.soxychains.core.Task;
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
-import com.github.yassine.soxychains.subsystem.docker.networking.DnsHelper;
+import com.github.yassine.soxychains.subsystem.docker.networking.NetworkHelper;
 import com.github.yassine.soxychains.subsystem.docker.networking.NetworkingConfiguration;
 import com.github.yassine.soxychains.subsystem.docker.networking.task.NetworkingStartupTask;
 import com.google.auto.service.AutoService;
@@ -38,7 +38,7 @@ public class ServicesStartTask implements Task{
   private final DockerProvider dockerProvider;
   private final DockerConfiguration dockerConfiguration;
   private final NetworkingConfiguration networkingConfiguration;
-  private final DnsHelper dnsHelper;
+  private final NetworkHelper networkHelper;
   private final Injector injector;
 
   @Override @SuppressWarnings("unchecked")
@@ -65,7 +65,7 @@ public class ServicesStartTask implements Task{
                     createContainer.withName(nameSpaceContainer(dockerConfiguration, configOf(service).serviceName()));
                     createContainer.withImage(nameSpaceImage(dockerConfiguration, configOf(service).imageName()));
                     createContainer.withLabels(labelizeNamedEntity(configOf(service).serviceName(), dockerConfiguration));
-                    dnsHelper.getAddress(docker).map(createContainer::withDns).toObservable().blockingSubscribe();
+                    networkHelper.getDNSAddress(docker).map(createContainer::withDns).toObservable().blockingSubscribe();
                   }
                 ).map(containerId -> service)
                 .subscribeOn(Schedulers.io())

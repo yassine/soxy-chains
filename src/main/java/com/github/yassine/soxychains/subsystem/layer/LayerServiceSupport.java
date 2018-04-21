@@ -1,11 +1,13 @@
 package com.github.yassine.soxychains.subsystem.layer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.dockerjava.api.command.CreateNetworkCmd;
 import com.github.dockerjava.api.model.Network;
 import com.github.yassine.soxychains.SoxyChainsConfiguration;
+import com.github.yassine.soxychains.subsystem.docker.client.Docker;
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
-import com.github.yassine.soxychains.subsystem.docker.networking.DnsHelper;
+import com.github.yassine.soxychains.subsystem.docker.networking.NetworkHelper;
 import com.github.yassine.soxychains.subsystem.service.consul.ServiceScope;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -23,6 +25,7 @@ import java.util.*;
 import static com.github.yassine.soxychains.core.FluentUtils.AND_OPERATOR;
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.*;
 import static com.github.yassine.soxychains.subsystem.service.consul.ConsulUtils.namespaceLayerService;
+import static com.github.yassine.soxychains.subsystem.service.consul.ConsulUtils.portShift;
 import static com.machinezoo.noexception.Exceptions.sneak;
 import static io.reactivex.Observable.fromFuture;
 import static io.reactivex.Observable.fromIterable;
@@ -38,8 +41,11 @@ class LayerServiceSupport implements LayerService {
   private final DockerConfiguration dockerConfiguration;
   private final DockerProvider dockerProvider;
   private final ObjectMapper objectMapper;
-  private final DnsHelper dnsHelper;
+  private final NetworkHelper networkHelper;
   private final Set<LayerObserver> layerObservers;
+
+  private static final String SOXY_DRIVER_PROXY_HOST_OPTION = "soxy.proxyaddress";
+  private static final String SOXY_DRIVER_PROXY_PORT_OPTION = "soxy.proxyport";
 
   @Override
   public Single<Boolean> add(LayerNode node) {
@@ -68,7 +74,7 @@ class LayerServiceSupport implements LayerService {
                   .put(LAYER_SERVICE_KEY_LABEL, namespaceLayerService(node.getLayerIndex(), ServiceScope.LOCAL))
                   .build()
               );
-            dnsHelper.getAddressAtLayer(docker, node.getLayerIndex()).map(createContainerCmd::withDns).toObservable().blockingSubscribe();
+            networkHelper.getDNSAddressAtLayer(docker, node.getLayerIndex()).map(createContainerCmd::withDns).toObservable().blockingSubscribe();
           }
         ).map(Objects::nonNull);
       })
@@ -99,7 +105,7 @@ class LayerServiceSupport implements LayerService {
     //create a network
     return fromIterable(dockerProvider.dockers())
       .flatMapMaybe(docker -> docker.createNetwork(nameSpaceLayerNetwork(dockerConfiguration, index),
-              createNetworkCmd -> createNetworkCmd.withDriver(soxyDriverName(dockerConfiguration)))
+              createNetworkCmd -> configureNetworkOptions(index - 1, createNetworkCmd, docker) )
         .flatMap(networkId ->
           //create the layer network
           docker.findNetwork(nameSpaceLayerNetwork(dockerConfiguration, index))
@@ -127,6 +133,22 @@ class LayerServiceSupport implements LayerService {
       )
       .defaultIfEmpty(true)
       .reduce(true, AND_OPERATOR);
+  }
+
+  private CreateNetworkCmd configureNetworkOptions(int upperLayerIndex, CreateNetworkCmd createNetworkCmd, Docker docker){
+    if(upperLayerIndex >= 0){
+      AbstractLayerConfiguration upperLayerConfiguration = soxyChainsConfiguration.getLayers().get(upperLayerIndex);
+      networkHelper.getGobetweenAddress(docker)
+        .toObservable()
+        .blockingSubscribe(gobetweenAddress -> createNetworkCmd.withOptions(
+          ImmutableMap.of(
+            SOXY_DRIVER_PROXY_HOST_OPTION, gobetweenAddress,
+            SOXY_DRIVER_PROXY_PORT_OPTION, Integer.toString(portShift(upperLayerIndex, upperLayerConfiguration.getClusterServicePort()))
+          )
+        ));
+    }
+    createNetworkCmd.withDriver(soxyDriverName(dockerConfiguration));
+    return createNetworkCmd;
   }
 
   private String randomName(){
