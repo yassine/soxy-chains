@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.Set;
 
+import static com.github.yassine.soxychains.core.FluentUtils.AND_OPERATOR;
 import static com.github.yassine.soxychains.plugin.PluginUtils.configClassOf;
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.nameSpaceContainer;
 import static com.google.common.collect.Lists.reverse;
@@ -52,10 +53,10 @@ public class ServicesStopTask implements Task{
                   .subscribeOn(Schedulers.io())
               )
               // reduce the results as a single boolean value
-              .reduce(true, (a,b) -> a && b).blockingGet())
+              .reduce(true, AND_OPERATOR).blockingGet())
             )
           )
-      ).subscribeOn(Schedulers.io()).reduce(true, (a,b) -> a && b);
+      ).subscribeOn(Schedulers.io()).reduce(true, AND_OPERATOR);
   }
 
   @SuppressWarnings("unchecked")

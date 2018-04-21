@@ -14,6 +14,7 @@ import io.reactivex.schedulers.Schedulers;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
+import static com.github.yassine.soxychains.core.FluentUtils.AND_OPERATOR;
 import static io.reactivex.Observable.fromIterable;
 
 @DependsOn(ServicesStartTask.class) @RunOn(Phase.START) @AutoService(Task.class)
@@ -26,6 +27,6 @@ public class LayerStartTask implements Task{
   public Single<Boolean> execute() {
     return fromIterable(soxyChainsConfiguration.getLayers())
       .flatMapSingle(layerConfiguration -> layerService.addLayer(soxyChainsConfiguration.getLayers().indexOf(layerConfiguration), layerConfiguration).subscribeOn(Schedulers.io()))
-      .reduce(true, (a, b) -> a && b);
+      .reduce(true, AND_OPERATOR);
   }
 }

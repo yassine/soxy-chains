@@ -18,6 +18,7 @@ import org.apache.commons.lang.StringUtils;
 
 import java.util.Objects;
 
+import static com.github.yassine.soxychains.core.FluentUtils.AND_OPERATOR;
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.*;
 import static io.reactivex.Observable.fromIterable;
 
@@ -37,7 +38,7 @@ public class NetworkingStartupTask implements Task{
         nameSpaceNetwork(dockerConfiguration, networkingConfiguration.getNetworkName()),
         createNetworkCmd -> createNetworkCmd.withDriver(soxyDriverName(dockerConfiguration))
       ).subscribeOn(Schedulers.single()).map(StringUtils::isNotEmpty).defaultIfEmpty(false))
-    .reduce(true, (a, b) -> a && b)
+    .reduce(true, AND_OPERATOR)
     //start the platform DNS server
     .flatMap(result ->
       fromIterable(dockerProvider.dockers())
@@ -52,7 +53,7 @@ public class NetworkingStartupTask implements Task{
             }
           ).map(Objects::nonNull)
           .toSingle(false)
-        ).reduce(result, (a,b) -> a && b)
+        ).reduce(result, AND_OPERATOR)
     );
   }
 

@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.Set;
 
+import static com.github.yassine.soxychains.core.FluentUtils.AND_OPERATOR;
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.nameSpaceImage;
 import static com.github.yassine.soxychains.subsystem.docker.image.task.ImageTaskUtils.getNecessaryImages;
 
@@ -35,7 +36,7 @@ public class ImageUninstallTask implements Task{
       .flatMap(docker -> getNecessaryImages(imageRequirer)
           .flatMapMaybe(image -> docker.removeImage(nameSpaceImage(dockerConfiguration, image.getName()))
           .defaultIfEmpty(false)))
-      .reduce(true , (a,b) -> a && b);
+      .reduce(true , AND_OPERATOR);
   }
 
 }

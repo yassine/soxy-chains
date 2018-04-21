@@ -43,7 +43,7 @@ public interface Docker {
                                 String image,
                                 Consumer<CreateContainerCmd> beforeCreate);
   Maybe<Boolean> joinNetwork(Container container, String network);
-  Maybe<Boolean> leaveNetwork(String containerId, String networkName);
+  Maybe<Boolean> leaveNetwork(Container container, String networkName);
   Maybe<Boolean> stopContainer(String containerName,
                                Consumer<StopContainerCmd> beforeStop,
                                Consumer<String> afterStop,

@@ -2,10 +2,7 @@ package com.github.yassine.soxychains.subsystem.docker.client;
 
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.*;
-import com.github.dockerjava.api.model.BuildResponseItem;
-import com.github.dockerjava.api.model.Container;
-import com.github.dockerjava.api.model.Image;
-import com.github.dockerjava.api.model.Network;
+import com.github.dockerjava.api.model.*;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
 import com.github.yassine.soxychains.core.SoxyChainsException;
 import com.github.yassine.soxychains.subsystem.docker.NamespaceUtils;
@@ -72,7 +69,7 @@ class DockerSupport implements Docker {
               beforeCreate.accept(c);
               c.withName(networkName).withLabels(overrideLabels(c.getLabels(), labelizeNamedEntity(networkName, dockerConfiguration)));
           })
-          .withAfterExecute( networkResponse -> Optional.ofNullable(afterCreate).ifPresent(hook -> hook.accept( networkResponse.getId() ) ))
+          .withAfterExecute( networkResponse -> ofNullable(afterCreate).ifPresent(hook -> hook.accept( networkResponse.getId() ) ))
           .execute()
           .map(CreateNetworkResponse::getId)
         )
@@ -213,24 +210,38 @@ class DockerSupport implements Docker {
 
   @Override
   public Maybe<Boolean> joinNetwork(Container container, String networkName) {
-    return findNetwork(networkName)
-      .flatMap(network -> new SyncDockerExecutor<>(client.connectToNetworkCmd()
-                                                    .withContainerId(container.getId())
-                                                    .withNetworkId(network.getId()), hostConfiguration())
-                            .withSuccessFormatter(v -> format("Successfully made container '%s' join network '%s'", container.getNames()[0], network.getName()))
-                            .withErrorFormatter(e -> format("Failed to make container '%s' join network '%s'", container.getNames()[0], network.getName()))
-                            .execute())
-      .map(Objects::nonNull);
+    return ofNullable(container.getNetworkSettings())
+      .map(ContainerNetworkSettings::getNetworks)
+      .map(networks -> networks.containsKey(networkName))
+      .flatMap(alreadyConnected -> alreadyConnected
+        ? Optional.of(Maybe.just(true))
+        : Optional.empty()
+      ).orElse(
+        findNetwork(networkName)
+          .flatMap(network -> new SyncDockerExecutor<>(client.connectToNetworkCmd()
+            .withContainerId(container.getId())
+            .withNetworkId(network.getId()), hostConfiguration())
+            .withSuccessFormatter(v -> format("Successfully made container '%s' join network '%s'", container.getNames()[0], network.getName()))
+            .withErrorFormatter(e -> format("Failed to make container '%s' join network '%s'", container.getNames()[0], network.getName()))
+            .execute())
+          .map(Objects::nonNull)
+      );
   }
 
 
   @Override
-  public Maybe<Boolean> leaveNetwork(String containerId, String networkName) {
-    return findNetwork(networkName)
-      .flatMap(network -> new SyncDockerExecutor<>(client.disconnectFromNetworkCmd()
-        .withContainerId(containerId)
-        .withNetworkId(network.getId()), hostConfiguration()).execute())
-      .map(Objects::nonNull);
+  public Maybe<Boolean> leaveNetwork(Container container, String networkName) {
+    return ofNullable(container.getNetworkSettings())
+      .map(ContainerNetworkSettings::getNetworks)
+      .map(networks -> networks.containsKey(networkName))
+      .flatMap(isConnected -> isConnected ? Optional.empty()
+                                          : Optional.of(Maybe.just(true))
+      ).orElse(findNetwork(networkName)
+        .flatMap(network -> new SyncDockerExecutor<>(client.disconnectFromNetworkCmd()
+          .withContainerId(container.getId())
+          .withNetworkId(network.getId()), hostConfiguration()).execute())
+        .map(Objects::nonNull)
+      );
   }
 
   @Override

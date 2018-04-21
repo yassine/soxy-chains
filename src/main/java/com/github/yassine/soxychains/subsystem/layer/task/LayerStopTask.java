@@ -21,6 +21,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.Set;
 
+import static com.github.yassine.soxychains.core.FluentUtils.AND_OPERATOR;
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.*;
 import static io.reactivex.Observable.*;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
@@ -58,7 +59,7 @@ public class LayerStopTask implements Task{
                 .flatMapSingle(layerConfiguration -> layerService.removeLayer(soxyChainsConfiguration.getLayers().indexOf(layerConfiguration), layerConfiguration)
                   .subscribeOn(Schedulers.io()))
             )
-            .reduce(true , (a,b) -> a && b) ;
+            .reduce(true , AND_OPERATOR) ;
   }
 
 }

@@ -1,5 +1,6 @@
 package com.github.yassine.soxychains.cli
 
+import com.ecwid.consul.v1.QueryParams
 import com.github.dockerjava.api.model.Container
 import com.github.yassine.soxychains.SoxyChainsApplication
 import com.github.yassine.soxychains.SoxyChainsConfiguration
@@ -21,6 +22,8 @@ import com.github.yassine.soxychains.subsystem.layer.spi.tor.TorLayerConfigurati
 import com.github.yassine.soxychains.subsystem.layer.spi.tor.TorNodeConfiguration
 import com.github.yassine.soxychains.subsystem.service.ServicesPlugin
 import com.github.yassine.soxychains.subsystem.service.ServicesPluginConfiguration
+import com.github.yassine.soxychains.subsystem.service.consul.ConsulProvider
+import com.github.yassine.soxychains.subsystem.service.consul.ServiceScope
 import com.google.common.base.Joiner
 import com.google.common.collect.ImmutableMap
 import com.google.common.io.Files
@@ -42,9 +45,12 @@ import java.util.stream.Collectors
 
 import static com.github.yassine.soxychains.plugin.PluginUtils.configClassOf
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.*
+import static com.github.yassine.soxychains.subsystem.service.consul.ConsulUtils.namespaceLayerService
+import static java.util.Arrays.asList
 import static java.util.Arrays.stream
+import static java.util.stream.IntStream.range
 
-@UseModules(TestModule) //@Stepwise
+@UseModules(TestModule) @Stepwise
 class StartCommandSpec extends Specification {
 
   @Inject
@@ -61,6 +67,8 @@ class StartCommandSpec extends Specification {
   private LayerService layerService
   @Inject
   private Map<Class<? extends AbstractLayerConfiguration>, LayerProvider> providers
+  @Inject
+  private ConsulProvider consulProvider
   @Inject @Shared
   private PhaseRunner phaseRunner
 
@@ -175,8 +183,19 @@ class StartCommandSpec extends Specification {
   }
 
   def "nodes are automatically published in consul" () {
+    setup:
+    def consul = consulProvider.get(configuration.getHosts().get(0))
+
     expect:
-    true
+    //local & cluster services exists
+    consul.getCatalogServices(QueryParams.DEFAULT).getValue()
+      .keySet().containsAll(
+        range(0, soxyChainsConfiguration.getLayers().size())
+          .boxed()
+          .flatMap{ index -> asList(namespaceLayerService(index, ServiceScope.LOCAL), namespaceLayerService(index, ServiceScope.CLUSTER)).stream() }
+          .collect(Collectors.toList())
+      )
+
   }
 
   def "gobetween services backends are configured" () {

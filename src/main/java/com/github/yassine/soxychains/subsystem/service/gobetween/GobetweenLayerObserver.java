@@ -12,6 +12,8 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import static com.github.yassine.soxychains.core.FluentUtils.AND_OPERATOR;
+
 @AutoService(LayerObserver.class) @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Inject), access = AccessLevel.PUBLIC)
 public class GobetweenLayerObserver implements LayerObserver {
@@ -24,7 +26,7 @@ public class GobetweenLayerObserver implements LayerObserver {
     return Observable.fromIterable(dockerProvider.dockers())
       .flatMapSingle(docker ->
         gobetweenProvider.get(docker.hostConfiguration()).register(index, layerConfiguration)
-      ).reduce(true, (a,b) -> a && b).toMaybe();
+      ).reduce(true, AND_OPERATOR).toMaybe();
   }
 
   @Override
@@ -32,6 +34,6 @@ public class GobetweenLayerObserver implements LayerObserver {
     return Observable.fromIterable(dockerProvider.dockers())
       .flatMapSingle(docker ->
         gobetweenProvider.get(docker.hostConfiguration()).unRegister(index, layerConfiguration)
-      ).reduce(true, (a,b) -> a && b).toMaybe();
+      ).reduce(true, AND_OPERATOR).toMaybe();
   }
 }

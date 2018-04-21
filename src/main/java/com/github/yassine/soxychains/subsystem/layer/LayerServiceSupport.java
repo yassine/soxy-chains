@@ -20,8 +20,9 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.*;
 
+import static com.github.yassine.soxychains.core.FluentUtils.AND_OPERATOR;
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.*;
-import static com.github.yassine.soxychains.subsystem.service.consul.ConsulNamingUtils.namespaceLayerService;
+import static com.github.yassine.soxychains.subsystem.service.consul.ConsulUtils.namespaceLayerService;
 import static com.machinezoo.noexception.Exceptions.sneak;
 import static io.reactivex.Observable.fromFuture;
 import static io.reactivex.Observable.fromIterable;
@@ -106,9 +107,9 @@ class LayerServiceSupport implements LayerService {
               // notify the plugins
               .flatMapMaybe(plugin -> plugin.onLayerAdd(index, layerConfiguration, network)
                                         .subscribeOn(Schedulers.io()))
-              .reduce(true, (a,b) -> a && b)
+              .reduce(true, AND_OPERATOR)
             ).toMaybe()
-        )).reduce(true, (a,b) -> a && b);
+        )).reduce(true, AND_OPERATOR);
   }
 
   public Single<Boolean> removeLayer(int index, AbstractLayerConfiguration layerConfiguration){
@@ -119,13 +120,13 @@ class LayerServiceSupport implements LayerService {
             // notify the plugins
             .flatMapMaybe(plugin -> plugin.onLayerPreRemove(index, layerConfiguration, network).subscribeOn(Schedulers.io()))
             .defaultIfEmpty(true)
-          ).reduce(true, (a,b) -> a && b)
+          ).reduce(true, AND_OPERATOR)
           //remove the network
           .flatMapMaybe(result -> docker.removeNetwork(nameSpaceLayerNetwork(dockerConfiguration, index)).subscribeOn(Schedulers.io()))
           .defaultIfEmpty(true)
       )
       .defaultIfEmpty(true)
-      .reduce(true, (a,b) -> a && b);
+      .reduce(true, AND_OPERATOR);
   }
 
   private String randomName(){

@@ -14,6 +14,7 @@ import io.reactivex.schedulers.Schedulers;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
+import static com.github.yassine.soxychains.core.FluentUtils.AND_OPERATOR;
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.nameSpaceContainer;
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.nameSpaceNetwork;
 import static io.reactivex.Observable.concat;
@@ -34,11 +35,11 @@ public class NetworkingStopTask implements Task{
       fromIterable(dockerProvider.dockers())
         .flatMapMaybe(docker -> docker.stopContainer(
           nameSpaceContainer(dockerConfiguration, networkingConfiguration.getDnsConfiguration().getServiceName()))
-        ).reduce(true, (a, b) -> a && b).toObservable(),
+        ).reduce(true, AND_OPERATOR).toObservable(),
       fromIterable(dockerProvider.dockers())
         .flatMapMaybe(docker -> docker.removeNetwork(nameSpaceNetwork(dockerConfiguration, networkingConfiguration.getNetworkName())).defaultIfEmpty(false))
         .subscribeOn(Schedulers.io())
-    ).reduce(true, (a, b) -> a && b);
+    ).reduce(true, AND_OPERATOR);
   }
 
 }

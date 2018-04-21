@@ -12,6 +12,7 @@ import io.reactivex.Single;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
+import static com.github.yassine.soxychains.core.FluentUtils.AND_OPERATOR;
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.*;
 import static io.reactivex.Observable.fromIterable;
 
@@ -38,7 +39,7 @@ public class DriverStartupTask implements Task {
         )
         .map(c -> true)
         .defaultIfEmpty(true))
-      .reduce(true, (a,b) -> a && b);
+      .reduce(true, AND_OPERATOR);
   }
 
 }

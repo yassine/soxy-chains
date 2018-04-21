@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.Set;
 
+import static com.github.yassine.soxychains.core.FluentUtils.AND_OPERATOR;
 import static com.github.yassine.soxychains.plugin.PluginUtils.configClassOf;
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.*;
 import static io.reactivex.Observable.fromFuture;
@@ -72,11 +73,11 @@ public class ServicesStartTask implements Task{
               // wait for programmatic startup check
               .flatMapSingle(service -> (Single<Boolean>) service.isReady(docker.hostConfiguration(), configOf(service)))
               // reduce (over each service) the results as a single boolean value
-              .defaultIfEmpty(false).reduce(true, (a, b) -> a && b).blockingGet())
+              .defaultIfEmpty(false).reduce(true, AND_OPERATOR).blockingGet())
             )
           )
       // reduce (over each host) the results as a single boolean value
-      ).reduce(true, (a,b) -> a && b).subscribeOn(Schedulers.io());
+      ).reduce(true, AND_OPERATOR).subscribeOn(Schedulers.io());
   }
 
   @SuppressWarnings("unchecked")

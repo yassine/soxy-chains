@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.github.yassine.soxychains.core.FluentUtils.AND_OPERATOR;
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.SOXY_DRIVER_NAME;
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.nameSpaceContainer;
 import static io.reactivex.Observable.fromIterable;
@@ -41,7 +42,7 @@ public class DriverStopTask implements Task{
           id -> log.info("Ended network driver removal.")
         ).map(c -> true)
         .defaultIfEmpty(true)
-      ).reduce(true, (a,b) -> a && b);
+      ).reduce(true, AND_OPERATOR);
   }
 
 }

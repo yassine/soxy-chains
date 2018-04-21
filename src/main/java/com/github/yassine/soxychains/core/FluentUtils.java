@@ -2,6 +2,7 @@ package com.github.yassine.soxychains.core;
 
 import io.reactivex.Maybe;
 import io.reactivex.Single;
+import io.reactivex.functions.BiFunction;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -23,6 +24,8 @@ public class FluentUtils {
     runnable.run();
     return returnValue;
   }
+
+  public static final BiFunction<Boolean, Boolean, Boolean> AND_OPERATOR = (a, b) -> a && b;
 
   public static <V> Single<V> runAndGetAsSingle(Runnable runnable, V returnValue){
     return Single.fromFuture(supplyAsync(() -> runAndGet(runnable, returnValue)));

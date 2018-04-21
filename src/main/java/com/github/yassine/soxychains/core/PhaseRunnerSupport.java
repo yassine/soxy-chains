@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
+import static com.github.yassine.soxychains.core.FluentUtils.AND_OPERATOR;
 import static io.reactivex.Observable.fromFuture;
 import static io.reactivex.Observable.fromIterable;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
@@ -34,8 +35,8 @@ class PhaseRunnerSupport implements PhaseRunner {
               log.error("An error while executing task '{}'", task.name());
               log.error(exception.getMessage(), exception);
             }).subscribeOn(Schedulers.io())
-          ).reduce(true, (a, b) -> a && b).blockingGet())))
-      .reduce(true, (a, b) -> a && b);
+          ).reduce(true, AND_OPERATOR).blockingGet())))
+      .reduce(true, AND_OPERATOR);
   }
 
 }

@@ -11,6 +11,7 @@ import io.reactivex.Maybe;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
+import static com.github.yassine.soxychains.core.FluentUtils.AND_OPERATOR;
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.nameSpaceContainer;
 import static io.reactivex.Observable.fromIterable;
 
@@ -27,7 +28,7 @@ public class DNSLayerObserver implements LayerObserver {
     return fromIterable(dockerProvider.dockers()).flatMapMaybe(docker ->
         docker.findContainer(nameSpaceContainer(dockerConfiguration, dnsConfiguration.getServiceName()))
           .flatMap(container -> docker.joinNetwork(container, network.getName()))
-    ).reduce(true, (a,b) -> a && b)
+    ).reduce(true, AND_OPERATOR)
     .toMaybe();
   }
 
@@ -35,9 +36,9 @@ public class DNSLayerObserver implements LayerObserver {
   public Maybe<Boolean> onLayerPreRemove(Integer index, AbstractLayerConfiguration layerConfiguration, Network network) {
     return fromIterable(dockerProvider.dockers()).flatMapSingle(docker ->
       docker.findContainer(nameSpaceContainer(dockerConfiguration, dnsConfiguration.getServiceName()))
-        .flatMap(container -> docker.leaveNetwork(container.getId(), network.getName()))
+        .flatMap(container -> docker.leaveNetwork(container, network.getName()))
         .toSingle(false)
-    ).reduce(true, (a,b) -> a && b)
+    ).reduce(true, AND_OPERATOR)
     .toMaybe();
   }
 

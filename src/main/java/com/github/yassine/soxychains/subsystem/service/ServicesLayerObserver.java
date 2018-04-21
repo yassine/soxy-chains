@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.Set;
 
+import static com.github.yassine.soxychains.core.FluentUtils.AND_OPERATOR;
 import static com.github.yassine.soxychains.plugin.PluginUtils.configClassOf;
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.nameSpaceContainer;
 import static io.reactivex.Observable.fromIterable;
@@ -34,7 +35,7 @@ public class ServicesLayerObserver implements LayerObserver {
         serviceConfiguration -> docker.findContainer(nameSpaceContainer(dockerConfiguration, serviceConfiguration.serviceName()))
           .flatMap(container -> docker.joinNetwork(container, network.getName()))
       )
-    ).reduce(true, (a, b) -> a && b)
+    ).reduce(true, AND_OPERATOR)
     .toMaybe();
   }
 
@@ -43,9 +44,9 @@ public class ServicesLayerObserver implements LayerObserver {
     return fromIterable(dockerProvider.dockers())
       .flatMap(docker -> fromIterable(servicesPlugins).map(this::configOf).flatMapMaybe(
         serviceConfiguration -> docker.findContainer(nameSpaceContainer(dockerConfiguration, serviceConfiguration.serviceName()))
-          .flatMap(container -> docker.leaveNetwork(container.getId(), network.getName()))
+          .flatMap(container -> docker.leaveNetwork(container, network.getName()))
         )
-      ).reduce(true, (a, b) -> a && b)
+      ).reduce(true, AND_OPERATOR)
       .toMaybe();
   }
 

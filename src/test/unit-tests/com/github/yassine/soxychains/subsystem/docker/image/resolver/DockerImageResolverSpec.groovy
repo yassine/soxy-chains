@@ -15,7 +15,7 @@ import org.apache.commons.io.IOUtils
 import spock.guice.UseModules
 import spock.lang.Specification
 
-@UseModules([DockerModule, TestModule, LayerModule])
+@UseModules([DockerImageResolverModule, TestModule])
 class DockerImageResolverSpec extends Specification {
   @Inject
   DockerImageResolver resolver

@@ -17,6 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.Set;
 
+import static com.github.yassine.soxychains.core.FluentUtils.AND_OPERATOR;
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.nameSpaceImage;
 import static com.github.yassine.soxychains.subsystem.docker.image.task.ImageTaskUtils.getNecessaryImages;
 import static io.reactivex.Observable.fromIterable;
@@ -42,7 +43,7 @@ public class ImageInstallTask implements Task {
                                                        imgCmd -> imgCmd.withTarInputStream(dockerImageResolver.resolve(image.getRoot(), image.getTemplateVars())).withForcerm(true))
                                             .map(StringUtils::isNoneEmpty)
               .defaultIfEmpty(false)).subscribeOn(Schedulers.io()))
-            .reduce(true , (a, b) -> a && b);
+            .reduce(true , AND_OPERATOR);
   }
 
 }
