@@ -29,6 +29,7 @@ import static com.github.yassine.soxychains.subsystem.service.consul.ConsulUtils
 import static com.machinezoo.noexception.Exceptions.sneak;
 import static io.reactivex.Observable.fromFuture;
 import static io.reactivex.Observable.fromIterable;
+import static java.util.UUID.randomUUID;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 @Slf4j
@@ -43,9 +44,6 @@ class LayerServiceSupport implements LayerService {
   private final ObjectMapper objectMapper;
   private final NetworkHelper networkHelper;
   private final Set<LayerObserver> layerObservers;
-
-  private static final String SOXY_DRIVER_PROXY_HOST_OPTION = "soxy.proxyaddress";
-  private static final String SOXY_DRIVER_PROXY_PORT_OPTION = "soxy.proxyport";
 
   @Override
   public Single<Boolean> add(LayerNode node) {
@@ -142,17 +140,18 @@ class LayerServiceSupport implements LayerService {
         .toObservable()
         .blockingSubscribe(gobetweenAddress -> createNetworkCmd.withOptions(
           ImmutableMap.of(
-            SOXY_DRIVER_PROXY_HOST_OPTION, gobetweenAddress,
-            SOXY_DRIVER_PROXY_PORT_OPTION, Integer.toString(portShift(upperLayerIndex, upperLayerConfiguration.getClusterServicePort()))
+            NetworkHelper.SOXY_DRIVER_PROXY_HOST_OPTION, gobetweenAddress,
+            NetworkHelper.SOXY_DRIVER_PROXY_PORT_OPTION, Integer.toString(portShift(upperLayerIndex, upperLayerConfiguration.getClusterServicePort()))
           )
         ));
     }
-    createNetworkCmd.withDriver(soxyDriverName(dockerConfiguration));
+    createNetworkCmd.withDriver(soxyDriverName(dockerConfiguration))
+      .withLabels(labelizeLayerEntity(upperLayerIndex + 1));
     return createNetworkCmd;
   }
 
   private String randomName(){
-    return UUID.randomUUID().toString().substring(0, 8);
+    return randomUUID().toString().substring(0, 8);
   }
 
 }

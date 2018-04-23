@@ -17,6 +17,9 @@ import static java.util.Optional.ofNullable;
 @RequiredArgsConstructor(onConstructor = @__(@Inject), access = AccessLevel.PUBLIC) @Singleton
 public class NetworkHelper {
 
+  public static final String SOXY_DRIVER_PROXY_HOST_OPTION = "soxy.proxyaddress";
+  public static final String SOXY_DRIVER_PROXY_PORT_OPTION = "soxy.proxyport";
+
   private final DockerConfiguration dockerConfiguration;
   private final GobetweenConfiguration gobetweenConfiguration;
 

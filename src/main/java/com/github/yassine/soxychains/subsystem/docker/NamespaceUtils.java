@@ -99,6 +99,19 @@ public class NamespaceUtils {
     );
   }
 
+  public static Map<String, String> labelizeLayerEntity(int layerLevel){
+    return ImmutableMap.of(
+      LAYER_INDEX, Integer.toString(layerLevel)
+    );
+  }
+
+  public static Map<String, String> filterNamedEntity(DockerConfiguration dockerConfiguration){
+    return ImmutableMap.of(
+      SYSTEM_LABEL, "",
+      NAMESPACE_LABEL, dockerConfiguration.getNamespace()
+    );
+  }
+
   public static String soxyDriverName(DockerConfiguration dockerConfiguration){
     return Joiner.on("__").join(dockerConfiguration.getNamespace(), SOXY_DRIVER_NAME);
   }

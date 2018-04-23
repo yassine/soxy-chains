@@ -6,11 +6,14 @@ import com.github.yassine.soxychains.SoxyChainsApplication
 import com.github.yassine.soxychains.SoxyChainsConfiguration
 import com.github.yassine.soxychains.SoxyChainsModule
 import com.github.yassine.soxychains.TestUtils
+import com.github.yassine.soxychains.core.FluentUtils
 import com.github.yassine.soxychains.core.Phase
 import com.github.yassine.soxychains.core.PhaseRunner
+import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider
 import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration
 import com.github.yassine.soxychains.subsystem.docker.image.api.DockerImage
 import com.github.yassine.soxychains.subsystem.docker.image.api.ImageRequirer
+import com.github.yassine.soxychains.subsystem.docker.networking.NetworkHelper
 import com.github.yassine.soxychains.subsystem.layer.AbstractLayerConfiguration
 import com.github.yassine.soxychains.subsystem.layer.LayerNode
 import com.github.yassine.soxychains.subsystem.layer.LayerProvider
@@ -24,30 +27,46 @@ import com.github.yassine.soxychains.subsystem.service.ServicesPlugin
 import com.github.yassine.soxychains.subsystem.service.ServicesPluginConfiguration
 import com.github.yassine.soxychains.subsystem.service.consul.ConsulProvider
 import com.github.yassine.soxychains.subsystem.service.consul.ServiceScope
+import com.github.yassine.soxychains.subsystem.service.gobetween.GobetweenConfiguration
 import com.github.yassine.soxychains.subsystem.service.gobetween.GobetweenProvider
 import com.google.common.collect.ImmutableMap
 import com.google.common.io.Files
 import com.google.inject.AbstractModule
 import com.google.inject.Inject
 import com.google.inject.Injector
+import groovy.util.logging.Slf4j
+import io.reactivex.Maybe
 import io.reactivex.Observable
+import io.reactivex.ObservableSource
+import io.reactivex.schedulers.Schedulers
 import org.apache.commons.io.IOUtils
 import spock.guice.UseModules
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Stepwise
 
+import java.util.concurrent.CompletableFuture
 import java.util.stream.Collector
 import java.util.stream.Collectors
 
+import static com.ecwid.consul.v1.health.model.Check.CheckStatus.PASSING
+import static com.github.yassine.soxychains.core.FluentUtils.getWithRetry
 import static com.github.yassine.soxychains.plugin.PluginUtils.configClassOf
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.*
+import static com.github.yassine.soxychains.subsystem.docker.networking.NetworkHelper.SOXY_DRIVER_PROXY_HOST_OPTION
+import static com.github.yassine.soxychains.subsystem.docker.networking.NetworkHelper.SOXY_DRIVER_PROXY_PORT_OPTION
 import static com.github.yassine.soxychains.subsystem.service.consul.ConsulUtils.namespaceLayerService
+import static com.github.yassine.soxychains.subsystem.service.consul.ConsulUtils.portShift
+import static com.github.yassine.soxychains.subsystem.service.consul.ServiceScope.CLUSTER
+import static com.github.yassine.soxychains.subsystem.service.consul.ServiceScope.LOCAL
+import static io.reactivex.Observable.fromFuture
+import static io.reactivex.Observable.fromIterable
+import static java.lang.String.format
 import static java.util.Arrays.asList
 import static java.util.Arrays.stream
 import static java.util.stream.IntStream.range
 
-@UseModules(TestModule) @Stepwise
+@UseModules(TestModule) @Stepwise @Slf4j
 class StartCommandSpec extends Specification {
 
   @Inject
@@ -70,6 +89,12 @@ class StartCommandSpec extends Specification {
   private GobetweenProvider gobetweenProvider
   @Inject @Shared
   private PhaseRunner phaseRunner
+  @Inject
+  private NetworkHelper networkHelper
+  @Inject
+  private GobetweenConfiguration gobetweenConfiguration
+  @Inject
+  private DockerProvider dockerProvider
 
   def "it should create services docker images if missing and start required services"() {
     setup:
@@ -85,7 +110,7 @@ class StartCommandSpec extends Specification {
 
     expect:
     //all the required images have been created
-    Observable.fromIterable(imageRequirers)
+    fromIterable(imageRequirers)
       .flatMap({ requirer -> requirer.require() })
       .map{ DockerImage requiredImage -> requiredImage.getName() }
       .map{ String requiredImage -> dockerImages.stream().anyMatch{ repoImage ->
@@ -190,7 +215,7 @@ class StartCommandSpec extends Specification {
     consul.getCatalogServices(QueryParams.DEFAULT).getValue()
       .keySet().containsAll(
         range(0, soxyChainsConfiguration.getLayers().size()).boxed()
-          .flatMap{ index -> asList(namespaceLayerService(index, ServiceScope.LOCAL), namespaceLayerService(index, ServiceScope.CLUSTER)).stream() }
+          .flatMap{ index -> asList(namespaceLayerService(index, LOCAL), namespaceLayerService(index, CLUSTER)).stream() }
           .collect(Collectors.toList())
       )
   }
@@ -207,17 +232,55 @@ class StartCommandSpec extends Specification {
       )
   }
 
-  def "layers networks should be correctly configure" () {
+  def "layers networks should be correctly configured" () {
+    setup:
+    def dockerClient  = TestUtils.dockerClient(configuration.getHosts().get(0))
+    def docker        = dockerProvider.get(configuration.getHosts().get(0))
     expect:
-    true
+    fromIterable(range(1, soxyChainsConfiguration.getLayers().size()).boxed().collect(Collectors.<Integer>toList()))
+      .flatMap{layerIndex -> fromFuture(CompletableFuture.supplyAsync{ ->
+        def networks = dockerClient.listNetworksCmd().exec()
+        def currentNetwork = networks.stream().filter{net -> net.getName().contains(nameSpaceLayerNetwork(configuration, layerIndex))}.findAny().get()
+        def parentConfiguration = soxyChainsConfiguration.getLayers().get(layerIndex - 1)
+        def gobetweenAddress = networkHelper.getGobetweenAddress(docker).blockingGet()
+
+        println format("Expecting %s, found %s", Integer.toString(portShift(layerIndex-1, parentConfiguration.getClusterServicePort())), currentNetwork.getOptions().get(SOXY_DRIVER_PROXY_PORT_OPTION))
+        println format("Expecting %s, found %s", currentNetwork.getOptions().get(SOXY_DRIVER_PROXY_HOST_OPTION), gobetweenAddress)
+        return currentNetwork.getOptions().get(SOXY_DRIVER_PROXY_PORT_OPTION) == Integer.toString(portShift(layerIndex-1, parentConfiguration.getClusterServicePort())) && \
+               currentNetwork.getOptions().get(SOXY_DRIVER_PROXY_HOST_OPTION) == gobetweenAddress
+      })}
+      .reduce(true, { a,b -> a && b})
+      .blockingGet()
   }
 
-  def "services status should be 'passing' after a resonable amount of time" () {
+  def "services status should be 'passing' after a reasonable amount of time" () {
+    setup:
+    def consul = consulProvider.get(configuration.getHosts().get(0))
+    List<String> services = asList(namespaceLayerService(0, LOCAL), namespaceLayerService(0, CLUSTER), namespaceLayerService(1, LOCAL), namespaceLayerService(1, CLUSTER))
     expect:
-    true
+    fromIterable(services)
+      .flatMapMaybe{ service ->
+        return getWithRetry({ ->
+          def result = consul.getHealthChecksForService(service, QueryParams.DEFAULT).getValue()
+            .stream().map{check -> (check.getStatus() == PASSING)}
+            .reduce(true, {a,b -> a && b})
+          if(!result){
+            throw new RuntimeException(format("Failed to get service '%s' as healthy.", service))
+          }
+          consul.getHealthChecksForService(service, QueryParams.DEFAULT).getValue().forEach{
+            check ->
+            log.info("service '{}' with name '{}' has status '{}'.", check.getServiceId(), check.getServiceName(), check.getStatus())
+          }
+          return result
+        },{ retries -> log.info("successfully got service '{}' up after {} retries.", service, retries) },
+          { retries -> log.error("failed to get service '{}' up after {} retries.", service, retries) }, 180, 1000)
+          .onErrorResumeNext(Maybe.just(false)).defaultIfEmpty(false)
+      }
+      .reduce(true, { a,b -> a && b})
+      .blockingGet()
   }
 
-  def "it should remove all the services containers but keep their images"() {
+  def "it should remove all the services containers but keep the images"() {
     setup:
     File workDir = Files.createTempDir()
     File config  = new File(workDir, "config.yaml")
@@ -236,7 +299,7 @@ class StartCommandSpec extends Specification {
 
     expect:
     //all the required images still exist
-    Observable.fromIterable(imageRequirers)
+    fromIterable(imageRequirers)
       .flatMap{ requirer -> requirer.require() }
       .map{ DockerImage requiredImage -> requiredImage.getName() }
       .map{ String requiredImage -> dockerImages.stream().anyMatch{ repoImage ->
