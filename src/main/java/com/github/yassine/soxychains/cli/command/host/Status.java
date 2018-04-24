@@ -1,7 +1,7 @@
-package com.github.yassine.soxychains.cli.host;
+package com.github.yassine.soxychains.cli.command.host;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.yassine.soxychains.cli.ConfigurableCommand;
+import com.github.yassine.soxychains.cli.command.ConfigurableCommand;
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
 import com.google.inject.Inject;
 import io.airlift.airline.Command;

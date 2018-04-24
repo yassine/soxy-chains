@@ -1,4 +1,4 @@
-package com.github.yassine.soxychains.cli;
+package com.github.yassine.soxychains.cli.command;
 
 import com.github.yassine.soxychains.core.Phase;
 import com.github.yassine.soxychains.core.PhaseRunner;

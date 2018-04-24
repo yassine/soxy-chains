@@ -1,4 +1,4 @@
-package com.github.yassine.soxychains.cli;
+package com.github.yassine.soxychains.cli.command;
 
 import io.airlift.airline.Option;
 import lombok.Getter;

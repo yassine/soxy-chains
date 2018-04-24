@@ -1,4 +1,4 @@
-package com.github.yassine.soxychains.cli.host
+package com.github.yassine.soxychains.cli.command.host
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect
 import com.fasterxml.jackson.annotation.PropertyAccessor

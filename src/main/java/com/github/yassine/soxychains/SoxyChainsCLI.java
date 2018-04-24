@@ -1,7 +1,7 @@
 package com.github.yassine.soxychains;
 
-import com.github.yassine.soxychains.cli.CommandGroup;
-import com.github.yassine.soxychains.cli.ConfigurableCommand;
+import com.github.yassine.soxychains.cli.command.CommandGroup;
+import com.github.yassine.soxychains.cli.command.ConfigurableCommand;
 import com.google.common.collect.*;
 import com.google.common.reflect.ClassPath;
 import com.google.inject.Guice;

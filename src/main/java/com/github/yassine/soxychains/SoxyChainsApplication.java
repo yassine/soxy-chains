@@ -1,6 +1,6 @@
 package com.github.yassine.soxychains;
 
-import com.github.yassine.soxychains.cli.ConfigurableCommand;
+import com.github.yassine.soxychains.cli.command.ConfigurableCommand;
 
 public class SoxyChainsApplication {
   public static void main(String... args){
