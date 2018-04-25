@@ -1,8 +1,9 @@
 package com.github.yassine.soxychains.subsystem.docker.client
 
 import com.github.dockerjava.api.DockerClient
+import com.github.yassine.soxychains.ConfigurationModule
 import com.github.yassine.soxychains.SoxyChainsModule
-import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration
+import com.github.yassine.soxychains.subsystem.docker.config.DockerContext
 import com.github.yassine.soxychains.subsystem.docker.config.DockerHostConfiguration
 import com.google.inject.AbstractModule
 import com.google.inject.Inject
@@ -12,7 +13,7 @@ import spock.lang.Specification
 @UseModules(TestModule)
 class DockerProviderSupportSpec extends Specification {
   @Inject
-  DockerConfiguration dockerConfiguration
+  DockerContext dockerConfiguration
   @Inject
   DockerProvider dockerProvider
 
@@ -29,7 +30,8 @@ class DockerProviderSupportSpec extends Specification {
     @Override
     protected void configure() {
       InputStream config = getClass().getResourceAsStream("docker-provider-test.yaml")
-      install(new SoxyChainsModule(config))
+      install(new SoxyChainsModule())
+      install(new ConfigurationModule(config))
     }
   }
 }

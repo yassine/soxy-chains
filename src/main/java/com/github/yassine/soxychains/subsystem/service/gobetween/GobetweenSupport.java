@@ -4,9 +4,9 @@ import com.github.yassine.gobetween.GobetweenClient;
 import com.github.yassine.gobetween.api.configuration.ServersConfiguration;
 import com.github.yassine.gobetween.api.configuration.service.TCPServiceConfiguration;
 import com.github.yassine.gobetween.api.configuration.service.discovery.ConsulServiceDiscovery;
-import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
+import com.github.yassine.soxychains.subsystem.docker.config.DockerContext;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerHostConfiguration;
-import com.github.yassine.soxychains.subsystem.layer.AbstractLayerConfiguration;
+import com.github.yassine.soxychains.subsystem.layer.AbstractLayerContext;
 import com.github.yassine.soxychains.subsystem.service.consul.ConsulConfiguration;
 import com.github.yassine.soxychains.subsystem.service.consul.ConsulUtils;
 import com.github.yassine.soxychains.subsystem.service.consul.ServiceScope;
@@ -26,13 +26,13 @@ import static java.util.concurrent.CompletableFuture.supplyAsync;
 public class GobetweenSupport implements Gobetween {
 
   private final GobetweenClient gobetweenClient;
-  private final DockerConfiguration dockerConfiguration;
+  private final DockerContext dockerContext;
   @Getter
   private final DockerHostConfiguration host;
   private final ConsulConfiguration consulConfiguration;
 
   @Override
-  public Single<Boolean> register(int layerIndex, AbstractLayerConfiguration layerConfiguration) {
+  public Single<Boolean> register(int layerIndex, AbstractLayerContext layerConfiguration) {
     return fromFuture(supplyAsync( () -> {
       try{
         final String localServiceName   = namespaceLayerService(layerIndex, ServiceScope.LOCAL);
@@ -50,7 +50,7 @@ public class GobetweenSupport implements Gobetween {
               .setBackendIdleTimeout("10m")
               .setBackendConnectionTimeout("60s")
               .setDiscovery(new ConsulServiceDiscovery()
-                .setConsulHost(format("%s:%s",nameSpaceContainer(dockerConfiguration, consulConfiguration.serviceName()), consulConfiguration.getServicePort()))
+                .setConsulHost(format("%s:%s",nameSpaceContainer(dockerContext, consulConfiguration.serviceName()), consulConfiguration.getServicePort()))
                 .setConsulServiceTag(localServiceName)
                 .setConsulServiceName(localServiceName)
                 .setConsulServicePassingOnly(true)
@@ -70,7 +70,7 @@ public class GobetweenSupport implements Gobetween {
               .setBackendIdleTimeout("10m")
               .setBackendConnectionTimeout("60s")
               .setDiscovery(new ConsulServiceDiscovery()
-                .setConsulHost(format("%s:%s",nameSpaceContainer(dockerConfiguration, consulConfiguration.serviceName()), consulConfiguration.getServicePort()))
+                .setConsulHost(format("%s:%s",nameSpaceContainer(dockerContext, consulConfiguration.serviceName()), consulConfiguration.getServicePort()))
                 .setConsulServiceTag(clusterServiceName)
                 .setConsulServiceName(clusterServiceName)
                 .setConsulServicePassingOnly(true)
@@ -87,7 +87,7 @@ public class GobetweenSupport implements Gobetween {
   }
 
   @Override
-  public Single<Boolean> unRegister(int layerIndex, AbstractLayerConfiguration layerConfiguration) {
+  public Single<Boolean> unRegister(int layerIndex, AbstractLayerContext layerConfiguration) {
     return fromFuture(supplyAsync( () -> {
       try{
         final String localServiceName   = namespaceLayerService(layerIndex, ServiceScope.LOCAL);

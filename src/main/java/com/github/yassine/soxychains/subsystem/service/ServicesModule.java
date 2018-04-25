@@ -1,15 +1,22 @@
 package com.github.yassine.soxychains.subsystem.service;
 
 import com.github.yassine.artifacts.guice.utils.GuiceUtils;
-import com.github.yassine.soxychains.SoxyChainsConfiguration;
+import com.github.yassine.soxychains.SoxyChainsContext;
 import com.github.yassine.soxychains.plugin.Plugin;
+import com.github.yassine.soxychains.plugin.PluginConfiguration;
 import com.github.yassine.soxychains.plugin.PluginUtils;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.*;
 import com.google.inject.multibindings.Multibinder;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.Optional;
 import java.util.Set;
 
@@ -30,28 +37,53 @@ public class ServicesModule extends AbstractModule{
     pluginClasses.stream()
       .filter(pluginClass -> resolveRawArguments(ServicesPlugin.class, pluginClass).length == 1)
       .forEach(pluginClass -> {
-        pluginMultibinder.addBinding().to(pluginClass);
+        bind((Class) pluginClass).annotatedWith(Internal.class).to(pluginClass);
+        pluginMultibinder.addBinding().toProvider(new PluginProvider(pluginClass)).in(Singleton.class);
         PluginConfigProvider provider = new PluginConfigProvider(pluginClass);
         requestInjection(provider);
-        pluginMultibinder.addBinding().to(pluginClass);
         bind((Class) resolveRawArgument(ServicesPlugin.class, pluginClass)).toProvider(provider);
       });
   }
 
   @RequiredArgsConstructor
-  public static class PluginConfigProvider<CONFIG extends ServicesPluginConfiguration> implements Provider<CONFIG> {
-    private final Class<? extends Plugin<? extends CONFIG>> clazz;
+  static class PluginProvider implements Provider<ServicesPlugin> {
+    private final Class<? extends ServicesPlugin> pluginClass;
+    @Inject
+    private Injector injector;
+    private LoadingCache<String, ServicesPlugin> cache = CacheBuilder.newBuilder().build(new CacheLoader<String, ServicesPlugin>() {
+      @Override
+      public ServicesPlugin load(String s) throws Exception {
+        PluginConfiguration configuration = (PluginConfiguration) injector.getInstance((Class) resolveRawArgument(ServicesPlugin.class, pluginClass));
+        ServicesPlugin plugin = injector.getInstance(Key.get(TypeLiteral.get(pluginClass), Internal.class));
+        plugin.configure(configuration);
+        return plugin;
+      }
+    });
+    @Override @SneakyThrows
+    public ServicesPlugin get() {
+      return cache.get("");
+    }
+  }
+
+  @BindingAnnotation @Retention(RetentionPolicy.RUNTIME)
+  @interface Internal {
+
+  }
+
+  @RequiredArgsConstructor
+  public static class PluginConfigProvider<C extends ServicesPluginConfiguration> implements Provider<C> {
+    private final Class<? extends Plugin<? extends C>> clazz;
     @Inject
     private Provider<ServicesConfiguration> servicesConfiguration;
     @Override @SuppressWarnings("unchecked")
-    public CONFIG get() {
-      return (CONFIG) servicesConfiguration.get().get(clazz);
+    public C get() {
+      return (C) servicesConfiguration.get().get(clazz);
     }
   }
 
   @Provides @Singleton
-  ServicesConfiguration servicesConfiguration(SoxyChainsConfiguration soxyChainsConfiguration){
-    return Optional.ofNullable(soxyChainsConfiguration.getServices())
+  ServicesConfiguration servicesConfiguration(SoxyChainsContext soxyChainsContext){
+    return Optional.ofNullable(soxyChainsContext.getDocker().getServices())
             .orElse(defaultServicesConfiguration());
   }
 

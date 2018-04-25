@@ -6,7 +6,7 @@ import com.github.yassine.soxychains.core.Phase;
 import com.github.yassine.soxychains.core.RunOn;
 import com.github.yassine.soxychains.core.Task;
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
-import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
+import com.github.yassine.soxychains.subsystem.docker.config.DockerContext;
 import com.github.yassine.soxychains.subsystem.docker.networking.task.NetworkingStopTask;
 import com.google.auto.service.AutoService;
 import com.google.inject.Inject;
@@ -35,20 +35,20 @@ public class ServicesStopTask implements Task{
   private final Set<ServicesPlugin> services;
   private final TaskScheduler taskScheduler;
   private final DockerProvider dockerProvider;
-  private final DockerConfiguration dockerConfiguration;
+  private final DockerContext dockerContext;
   private final Injector injector;
 
   @Override @SuppressWarnings("unchecked")
   public Single<Boolean> execute() {
     // actions to come are executed on each host in parallel
-    return fromIterable(dockerProvider.dockers())
+    return dockerProvider.dockers()
       //Services are stopped in the reverse order of their startup
       .flatMap(docker -> fromIterable(reverse(taskScheduler.scheduleInstances(services)))
           //for each wave of services
           .flatMap(servicesWave -> fromFuture(supplyAsync(() -> fromIterable(servicesWave)
               .flatMapMaybe(service ->
                 //stop and remove the container that relates to the given service
-                docker.stopContainer(nameSpaceContainer(dockerConfiguration, configOf(service).serviceName()))
+                docker.stopContainer(nameSpaceContainer(dockerContext, configOf(service).serviceName()))
                   .defaultIfEmpty(false)
                   .subscribeOn(Schedulers.io())
               )

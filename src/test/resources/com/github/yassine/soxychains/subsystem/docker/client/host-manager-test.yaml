@@ -1,0 +1,5 @@
+docker:
+  namespace: soxy-chains-testing
+  hosts:
+   - uri: unix:///var/run/docker.sock
+   - uri: tcp:///127.255.255.255

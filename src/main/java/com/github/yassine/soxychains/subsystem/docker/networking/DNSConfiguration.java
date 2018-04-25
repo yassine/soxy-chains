@@ -12,7 +12,5 @@ public class DNSConfiguration {
   @NotNull
   private String  serviceName    = DNS_CONFIG_ID;
   @NotNull
-  private Integer servicePort    = 5353;
-  @NotNull
   private Integer managementPort = 8070;
 }

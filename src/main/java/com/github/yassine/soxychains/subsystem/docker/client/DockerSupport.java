@@ -6,7 +6,7 @@ import com.github.dockerjava.api.model.*;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
 import com.github.yassine.soxychains.core.SoxyChainsException;
 import com.github.yassine.soxychains.subsystem.docker.NamespaceUtils;
-import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
+import com.github.yassine.soxychains.subsystem.docker.config.DockerContext;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerHostConfiguration;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -39,7 +39,7 @@ import static java.util.concurrent.CompletableFuture.supplyAsync;
 @RequiredArgsConstructor @Slf4j @Accessors(fluent = true)
 class DockerSupport implements Docker {
   private final SoxyChainsDockerClient client;
-  private final DockerConfiguration dockerConfiguration;
+  private final DockerContext dockerContext;
 
   @Override
   public Maybe<Image> findImageByTag(String imageTag) {
@@ -67,7 +67,7 @@ class DockerSupport implements Docker {
           .withErrorFormatter( exception -> format("An occurred while creating network '%s' : '%s'", networkName, exception.getMessage()) )
           .withBeforeExecute( c -> {
               beforeCreate.accept(c);
-              c.withName(networkName).withLabels(overrideLabels(c.getLabels(), labelizeNamedEntity(networkName, dockerConfiguration)));
+              c.withName(networkName).withLabels(overrideLabels(c.getLabels(), labelizeNamedEntity(networkName, dockerContext)));
           })
           .withAfterExecute( networkResponse -> ofNullable(afterCreate).ifPresent(hook -> hook.accept( networkResponse.getId() ) ))
           .execute()
@@ -128,7 +128,7 @@ class DockerSupport implements Docker {
       .withLabelFilter(
         ImmutableMap.of(
           NamespaceUtils.SYSTEM_LABEL, "",
-          NamespaceUtils.NAMESPACE_LABEL, dockerConfiguration.getNamespace()
+          NamespaceUtils.NAMESPACE_LABEL, dockerContext.getNamespace()
         )
       )
       .exec()
@@ -163,7 +163,7 @@ class DockerSupport implements Docker {
                 .withLabelFilter(
                   ImmutableMap.of(
                     NamespaceUtils.SYSTEM_LABEL, "",
-                    NamespaceUtils.NAMESPACE_LABEL, dockerConfiguration.getNamespace()
+                    NamespaceUtils.NAMESPACE_LABEL, dockerContext.getNamespace()
                   )
                 )
                 .exec()
@@ -238,8 +238,11 @@ class DockerSupport implements Docker {
                                           : Optional.of(Maybe.just(true))
       ).orElse(findNetwork(networkName)
         .flatMap(network -> new SyncDockerExecutor<>(client.disconnectFromNetworkCmd()
-          .withContainerId(container.getId())
-          .withNetworkId(network.getId()), hostConfiguration()).execute())
+            .withContainerId(container.getId())
+            .withNetworkId(network.getId()), hostConfiguration())
+          .withSuccessFormatter(v -> format("Successfully made container '%s' leave network '%s'", container.getNames()[0], network.getName()))
+          .withErrorFormatter(e -> format("Failed to make container '%s' leave network '%s'", container.getNames()[0], network.getName()))
+          .execute())
         .map(Objects::nonNull)
       );
   }
@@ -347,7 +350,7 @@ class DockerSupport implements Docker {
     return buildImage(tag, beforeCreate, null);
   }
 
-  <CMD extends AsyncDockerCmd<CMD, ITEM>, ITEM, CALLBACK extends ResultCallback<ITEM>, RESULT> ASyncDockerExecutor<CMD, ITEM, CALLBACK, RESULT> getAsyncExecutor(CMD command, DockerHostConfiguration config){
+  <C extends AsyncDockerCmd<C, I>, I, K extends ResultCallback<I>, R> ASyncDockerExecutor<C, I, K, R> getAsyncExecutor(C command, DockerHostConfiguration config){
     return new ASyncDockerExecutor<>(command, config);
   }
 

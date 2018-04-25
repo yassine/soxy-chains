@@ -1,9 +1,9 @@
 package com.github.yassine.soxychains.cli
 
-import com.github.yassine.soxychains.SoxyChainsApplication
+import com.github.yassine.soxychains.ConfigurationModule
 import com.github.yassine.soxychains.SoxyChainsModule
 import com.github.yassine.soxychains.TestUtils
-import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration
+import com.github.yassine.soxychains.subsystem.docker.config.DockerContext
 import com.github.yassine.soxychains.subsystem.docker.image.api.DockerImage
 import com.github.yassine.soxychains.subsystem.docker.image.api.ImageRequirer
 import com.google.common.io.Files
@@ -24,7 +24,7 @@ class InstallCommandSpec extends Specification {
   @Inject
   private Set<ImageRequirer> imageRequirers
   @Inject
-  private DockerConfiguration configuration
+  private DockerContext configuration
 
   def "it should create docker images for required services"() {
     setup:
@@ -32,7 +32,7 @@ class InstallCommandSpec extends Specification {
     File config  = new File(workDir, "config.yaml")
     workDir.deleteOnExit()
     IOUtils.copy(getClass().getResourceAsStream("config-install.yaml"), new FileOutputStream(config))
-    SoxyChainsApplication.main("install", "-c", config.getAbsolutePath())
+    Application.main("install", "-c", config.getAbsolutePath())
     def dockerClient  = TestUtils.dockerClient(configuration.getHosts().get(0))
     def dockerImages  = dockerClient.listImagesCmd().exec()
     expect:
@@ -54,7 +54,7 @@ class InstallCommandSpec extends Specification {
     File config  = new File(workDir, "config.yaml")
     workDir.deleteOnExit()
     IOUtils.copy(getClass().getResourceAsStream("config-install.yaml"), new FileOutputStream(config))
-    SoxyChainsApplication.main("uninstall", "-c", config.getAbsolutePath())
+    Application.main("uninstall", "-c", config.getAbsolutePath())
     def dockerClient = TestUtils.dockerClient(configuration.getHosts().get(0))
     def dockerImages  = dockerClient.listImagesCmd().exec()
 
@@ -73,7 +73,8 @@ class InstallCommandSpec extends Specification {
     @Override
     protected void configure() {
       InputStream is = getClass().getResourceAsStream("config-install.yaml")
-      install(new SoxyChainsModule(is))
+      install(new ConfigurationModule(is))
+      install(new SoxyChainsModule())
     }
   }
 

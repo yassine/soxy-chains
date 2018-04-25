@@ -6,7 +6,7 @@ import com.github.yassine.soxychains.core.Phase;
 import com.github.yassine.soxychains.core.RunOn;
 import com.github.yassine.soxychains.core.Task;
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
-import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
+import com.github.yassine.soxychains.subsystem.docker.config.DockerContext;
 import com.github.yassine.soxychains.subsystem.docker.networking.NetworkHelper;
 import com.github.yassine.soxychains.subsystem.docker.networking.NetworkingConfiguration;
 import com.github.yassine.soxychains.subsystem.docker.networking.task.NetworkingStartupTask;
@@ -36,7 +36,7 @@ public class ServicesStartTask implements Task{
   private final Set<ServicesPlugin> services;
   private final TaskScheduler taskScheduler;
   private final DockerProvider dockerProvider;
-  private final DockerConfiguration dockerConfiguration;
+  private final DockerContext dockerContext;
   private final NetworkingConfiguration networkingConfiguration;
   private final NetworkHelper networkHelper;
   private final Injector injector;
@@ -44,7 +44,7 @@ public class ServicesStartTask implements Task{
   @Override @SuppressWarnings("unchecked")
   public Single<Boolean> execute() {
     // actions to come are executed on each host in parallel
-    return fromIterable(dockerProvider.dockers())
+    return dockerProvider.dockers()
       //Knowing that a service may require other services to start before actually starting, services will be started
       //as waves of tasks that can be executed in parallel.
       .flatMap(docker -> fromIterable(taskScheduler.scheduleInstances(services))
@@ -55,16 +55,16 @@ public class ServicesStartTask implements Task{
                 //create & start the container that relates to the given service
                 docker.runContainer(
                   //with a name of
-                  nameSpaceContainer(dockerConfiguration, configOf(service).serviceName()),
+                  nameSpaceContainer(dockerContext, configOf(service).serviceName()),
                   //and image
-                  nameSpaceImage(dockerConfiguration, configOf(service).imageName()),
+                  nameSpaceImage(dockerContext, configOf(service).imageName()),
                   // The pre-create container hook is used to allow services configuring the container before their creation
                   createContainer -> {
-                    service.configureContainer(createContainer, configOf(service), dockerConfiguration);
-                    createContainer.withNetworkMode(nameSpaceNetwork(dockerConfiguration, networkingConfiguration.getNetworkName()));
-                    createContainer.withName(nameSpaceContainer(dockerConfiguration, configOf(service).serviceName()));
-                    createContainer.withImage(nameSpaceImage(dockerConfiguration, configOf(service).imageName()));
-                    createContainer.withLabels(labelizeNamedEntity(configOf(service).serviceName(), dockerConfiguration));
+                    service.configureContainer(createContainer, configOf(service), dockerContext);
+                    createContainer.withNetworkMode(nameSpaceNetwork(dockerContext, networkingConfiguration.getNetworkName()));
+                    createContainer.withName(nameSpaceContainer(dockerContext, configOf(service).serviceName()));
+                    createContainer.withImage(nameSpaceImage(dockerContext, configOf(service).imageName()));
+                    createContainer.withLabels(labelizeNamedEntity(configOf(service).serviceName(), dockerContext));
                     networkHelper.getDNSAddress(docker).map(createContainer::withDns).toObservable().blockingSubscribe();
                   }
                 ).map(containerId -> service)

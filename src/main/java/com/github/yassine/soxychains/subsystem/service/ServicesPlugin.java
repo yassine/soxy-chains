@@ -2,7 +2,7 @@ package com.github.yassine.soxychains.subsystem.service;
 
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.yassine.soxychains.plugin.Plugin;
-import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
+import com.github.yassine.soxychains.subsystem.docker.config.DockerContext;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerHostConfiguration;
 import io.reactivex.Single;
 
@@ -26,11 +26,11 @@ import static java.util.Optional.ofNullable;
  *
  * (WIP: Spec may evolve yet)
  *
- * @param <CONFIG>
+ * @param <C>
  */
-public interface ServicesPlugin<CONFIG extends ServicesPluginConfiguration> extends Plugin<CONFIG> {
+public interface ServicesPlugin<C extends ServicesPluginConfiguration> extends Plugin<C> {
 
-  default void configureContainer(CreateContainerCmd createContainerCmd, CONFIG pluginConfiguration, DockerConfiguration dockerConfiguration){
+  default void configureContainer(CreateContainerCmd createContainerCmd, C pluginConfiguration, DockerContext dockerContext){
     ofNullable(pluginConfiguration.servicePorts())
       .ifPresent(servicePorts ->
         createContainerCmd
@@ -47,7 +47,7 @@ public interface ServicesPlugin<CONFIG extends ServicesPluginConfiguration> exte
       );
   }
 
-  default Single<Boolean> isReady(DockerHostConfiguration host, CONFIG config){
+  default Single<Boolean> isReady(DockerHostConfiguration host, C config){
     return Single.just(true);
   }
 

@@ -1,7 +1,7 @@
 package com.github.yassine.soxychains.subsystem.service.gobetween;
 
 import com.github.yassine.gobetween.GobetweenClient;
-import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
+import com.github.yassine.soxychains.subsystem.docker.config.DockerContext;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerHostConfiguration;
 import com.github.yassine.soxychains.subsystem.service.consul.ConsulConfiguration;
 import com.google.common.cache.CacheBuilder;
@@ -19,7 +19,7 @@ import java.net.URI;
 @RequiredArgsConstructor(onConstructor = @__(@Inject), access = AccessLevel.PUBLIC)
 public class GobetweenProvider {
 
-  private final DockerConfiguration dockerConfiguration;
+  private final DockerContext dockerContext;
   private final ConsulConfiguration consulConfiguration;
   private final GobetweenConfiguration gobetweenConfiguration;
 
@@ -35,7 +35,7 @@ public class GobetweenProvider {
   private final LoadingCache<DockerHostConfiguration, Gobetween> cache = CacheBuilder.newBuilder().build(new CacheLoader<DockerHostConfiguration, Gobetween>() {
     @Override @SneakyThrows
     public Gobetween load(DockerHostConfiguration dockerHostConfiguration) throws Exception {
-    return new GobetweenSupport(clientCache.get(dockerHostConfiguration), dockerConfiguration, dockerHostConfiguration, consulConfiguration);
+    return new GobetweenSupport(clientCache.get(dockerHostConfiguration), dockerContext, dockerHostConfiguration, consulConfiguration);
     }
   });
 

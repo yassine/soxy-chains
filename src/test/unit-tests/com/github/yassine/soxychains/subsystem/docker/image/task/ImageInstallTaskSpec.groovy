@@ -3,7 +3,7 @@ package com.github.yassine.soxychains.subsystem.docker.image.task
 import com.github.dockerjava.api.command.BuildImageCmd
 import com.github.yassine.soxychains.subsystem.docker.client.Docker
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider
-import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration
+import com.github.yassine.soxychains.subsystem.docker.config.DockerContext
 import com.github.yassine.soxychains.subsystem.docker.image.api.DockerImage
 import com.github.yassine.soxychains.subsystem.docker.image.api.ImageRequirer
 import com.github.yassine.soxychains.subsystem.docker.image.resolver.DockerImageResolver
@@ -17,13 +17,13 @@ class ImageInstallTaskSpec extends Specification {
 
   Docker docker = Mock()
   DockerProvider dockerProvider = Mock()
-  DockerConfiguration configuration = new DockerConfiguration()
+  DockerContext configuration = new DockerContext()
   ImageRequirer imageRequirer = Mock()
   DockerImageResolver dockerImageResolver = Mock()
   ImageInstallTask task = new ImageInstallTask([imageRequirer] as Set, dockerImageResolver, dockerProvider, configuration)
 
   void setup () {
-    dockerProvider.dockers() >> [docker]
+    dockerProvider.dockers() >> Observable.fromIterable([docker])
     imageRequirer.require()  >> Observable.just(new DockerImage("test-image", null, null))
   }
 

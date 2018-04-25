@@ -1,5 +1,6 @@
 package com.github.yassine.soxychains.subsystem.service
 
+import com.github.yassine.soxychains.ConfigurationModule
 import com.github.yassine.soxychains.SoxyChainsModule
 import com.github.yassine.soxychains.plugin.PluginUtils
 import com.github.yassine.soxychains.subsystem.service.consul.ConsulConfiguration
@@ -13,7 +14,7 @@ class ServicesModuleSpec extends Specification {
     setup:
     InputStream config = getClass().getResourceAsStream("service-module-config.yaml")
     when:
-    Injector injector = Guice.createInjector(new SoxyChainsModule(config))
+    Injector injector = Guice.createInjector(new SoxyChainsModule(), new ConfigurationModule(config))
     ConsulConfiguration configuration = injector.getInstance(ConsulConfiguration.class)
     then:
     configuration != null
@@ -22,7 +23,7 @@ class ServicesModuleSpec extends Specification {
     setup:
     InputStream config = getClass().getResourceAsStream("service-module-config-with-services.yaml")
     when:
-    Injector injector = Guice.createInjector(new SoxyChainsModule(config))
+    Injector injector = Guice.createInjector(new SoxyChainsModule(), new ConfigurationModule(config))
     ConsulConfiguration configuration = injector.getInstance(ConsulConfiguration.class)
     then:
     configuration.imageName() == 'consul-test'
@@ -32,7 +33,7 @@ class ServicesModuleSpec extends Specification {
     setup:
     InputStream config = getClass().getResourceAsStream("service-module-config-with-services.yaml")
     when:
-    Injector injector = Guice.createInjector(new SoxyChainsModule(config))
+    Injector injector = Guice.createInjector(new SoxyChainsModule(), new ConfigurationModule(config))
     ConsulService consulService = injector.getInstance(ConsulService.class)
     ConsulConfiguration configuration = injector.getInstance(PluginUtils.configClassOf(ConsulService.class));
     then:

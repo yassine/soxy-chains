@@ -3,7 +3,7 @@ package com.github.yassine.soxychains.subsystem.service.consul;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.model.Bind;
 import com.github.yassine.soxychains.plugin.ConfigKey;
-import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
+import com.github.yassine.soxychains.subsystem.docker.config.DockerContext;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerHostConfiguration;
 import com.github.yassine.soxychains.subsystem.docker.image.RequiresImage;
 import com.github.yassine.soxychains.subsystem.service.ServicesPlugin;
@@ -32,7 +32,7 @@ public class ConsulService implements ServicesPlugin<ConsulConfiguration>{
   private final ConsulProvider consulProvider;
 
   @Override
-  public void configureContainer(CreateContainerCmd createContainerCmd, ConsulConfiguration pluginConfiguration, DockerConfiguration dockerConfiguration) {
+  public void configureContainer(CreateContainerCmd createContainerCmd, ConsulConfiguration pluginConfiguration, DockerContext dockerContext) {
     ofNullable(pluginConfiguration.servicePorts())
       .ifPresent(servicePorts ->
         createContainerCmd

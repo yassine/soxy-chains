@@ -4,7 +4,7 @@ import com.github.yassine.soxychains.core.Phase;
 import com.github.yassine.soxychains.core.RunOn;
 import com.github.yassine.soxychains.core.Task;
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
-import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
+import com.github.yassine.soxychains.subsystem.docker.config.DockerContext;
 import com.github.yassine.soxychains.subsystem.docker.image.api.ImageRequirer;
 import com.github.yassine.soxychains.subsystem.docker.image.resolver.DockerImageResolver;
 import com.google.auto.service.AutoService;
@@ -20,7 +20,6 @@ import java.util.Set;
 import static com.github.yassine.soxychains.core.FluentUtils.AND_OPERATOR;
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.nameSpaceImage;
 import static com.github.yassine.soxychains.subsystem.docker.image.task.ImageTaskUtils.getNecessaryImages;
-import static io.reactivex.Observable.fromIterable;
 
 /**
  * The install task would make sure that all the required docker images (network drivers, services, layer nodes)
@@ -33,13 +32,13 @@ public class ImageInstallTask implements Task {
   private final Set<ImageRequirer> imageRequirer;
   private final DockerImageResolver dockerImageResolver;
   private final DockerProvider dockerProvider;
-  private final DockerConfiguration dockerConfiguration;
+  private final DockerContext dockerContext;
 
   @Override
   public Single<Boolean> execute() {
-    return fromIterable(dockerProvider.dockers())
+    return dockerProvider.dockers()
             .flatMap(docker -> getNecessaryImages(imageRequirer)
-              .flatMapMaybe(image -> docker.buildImage(nameSpaceImage(dockerConfiguration, image.getName()),
+              .flatMapMaybe(image -> docker.buildImage(nameSpaceImage(dockerContext, image.getName()),
                                                        imgCmd -> imgCmd.withTarInputStream(dockerImageResolver.resolve(image.getRoot(), image.getTemplateVars())).withForcerm(true))
                                             .map(StringUtils::isNoneEmpty)
               .defaultIfEmpty(false)).subscribeOn(Schedulers.io()))

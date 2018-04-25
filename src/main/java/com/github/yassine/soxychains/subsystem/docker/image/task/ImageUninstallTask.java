@@ -4,11 +4,11 @@ import com.github.yassine.soxychains.core.Phase;
 import com.github.yassine.soxychains.core.RunOn;
 import com.github.yassine.soxychains.core.Task;
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
-import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
+import com.github.yassine.soxychains.subsystem.docker.config.DockerContext;
 import com.github.yassine.soxychains.subsystem.docker.image.api.ImageRequirer;
 import com.google.auto.service.AutoService;
 import com.google.inject.Inject;
-import io.reactivex.Observable;
+import io.reactivex.Maybe;
 import io.reactivex.Single;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -28,13 +28,13 @@ public class ImageUninstallTask implements Task{
 
   private final Set<ImageRequirer> imageRequirer;
   private final DockerProvider dockerProvider;
-  private final DockerConfiguration dockerConfiguration;
+  private final DockerContext dockerContext;
 
   @Override
   public Single<Boolean> execute() {
-    return Observable.fromIterable(dockerProvider.dockers())
+    return dockerProvider.dockers()
       .flatMap(docker -> getNecessaryImages(imageRequirer)
-          .flatMapMaybe(image -> docker.removeImage(nameSpaceImage(dockerConfiguration, image.getName()))
+          .flatMapMaybe(image -> docker.removeImage(nameSpaceImage(dockerContext, image.getName())).onErrorResumeNext(Maybe.just(false))
           .defaultIfEmpty(false)))
       .reduce(true , AND_OPERATOR);
   }

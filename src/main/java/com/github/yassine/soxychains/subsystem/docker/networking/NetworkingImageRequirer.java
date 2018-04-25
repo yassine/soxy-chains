@@ -1,6 +1,6 @@
 package com.github.yassine.soxychains.subsystem.docker.networking;
 
-import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
+import com.github.yassine.soxychains.subsystem.docker.config.DockerContext;
 import com.github.yassine.soxychains.subsystem.docker.image.api.DockerImage;
 import com.github.yassine.soxychains.subsystem.docker.image.api.ImageRequirer;
 import com.google.auto.service.AutoService;
@@ -18,16 +18,16 @@ import static com.github.yassine.soxychains.subsystem.docker.networking.DNSConfi
 
 @AutoService(ImageRequirer.class) @RequiredArgsConstructor(onConstructor = @__(@Inject), access = AccessLevel.PUBLIC)
 public class NetworkingImageRequirer implements ImageRequirer{
-  private final DockerConfiguration dockerConfiguration;
+  private final DockerContext dockerContext;
   @Override
   public Observable<DockerImage> require() {
     return Observable.fromArray(
       new DockerImage(SOXY_DRIVER_NAME,
           URI.create(Joiner.on("/").join("classpath:/", getClass().getPackage().getName().replaceAll("\\.","/"), "soxy_driver")),
-          ImmutableMap.of("config", dockerConfiguration)),
+          ImmutableMap.of("config", dockerContext)),
       new DockerImage(DNS_CONFIG_ID,
         URI.create(Joiner.on("/").join("classpath:/", getClass().getPackage().getName().replaceAll("\\.","/"), DNS_CONFIG_ID)),
-        ImmutableMap.of("config", dockerConfiguration.getNetworkingConfiguration().getDnsConfiguration()))
+        ImmutableMap.of("config", dockerContext.getNetworkingConfiguration().getDnsConfiguration()))
     );
   }
 }

@@ -2,26 +2,25 @@ package com.github.yassine.soxychains.cli
 
 import com.ecwid.consul.v1.QueryParams
 import com.github.dockerjava.api.model.Container
-import com.github.yassine.soxychains.SoxyChainsApplication
-import com.github.yassine.soxychains.SoxyChainsConfiguration
+import com.github.yassine.soxychains.ConfigurationModule
+import com.github.yassine.soxychains.SoxyChainsContext
 import com.github.yassine.soxychains.SoxyChainsModule
 import com.github.yassine.soxychains.TestUtils
-import com.github.yassine.soxychains.core.FluentUtils
 import com.github.yassine.soxychains.core.Phase
 import com.github.yassine.soxychains.core.PhaseRunner
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider
-import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration
+import com.github.yassine.soxychains.subsystem.docker.config.DockerContext
 import com.github.yassine.soxychains.subsystem.docker.image.api.DockerImage
 import com.github.yassine.soxychains.subsystem.docker.image.api.ImageRequirer
 import com.github.yassine.soxychains.subsystem.docker.networking.NetworkHelper
-import com.github.yassine.soxychains.subsystem.layer.AbstractLayerConfiguration
+import com.github.yassine.soxychains.subsystem.layer.AbstractLayerContext
 import com.github.yassine.soxychains.subsystem.layer.LayerNode
 import com.github.yassine.soxychains.subsystem.layer.LayerProvider
 import com.github.yassine.soxychains.subsystem.layer.LayerService
 import com.github.yassine.soxychains.subsystem.layer.spi.ovpn.OpenVPNConfiguration
-import com.github.yassine.soxychains.subsystem.layer.spi.ovpn.OpenVPNLayerConfiguration
+import com.github.yassine.soxychains.subsystem.layer.spi.ovpn.OpenVPNLayerContext
 import com.github.yassine.soxychains.subsystem.layer.spi.ovpn.OpenVPNNodeConfiguration
-import com.github.yassine.soxychains.subsystem.layer.spi.tor.TorLayerConfiguration
+import com.github.yassine.soxychains.subsystem.layer.spi.tor.TorLayerContext
 import com.github.yassine.soxychains.subsystem.layer.spi.tor.TorNodeConfiguration
 import com.github.yassine.soxychains.subsystem.service.ServicesPlugin
 import com.github.yassine.soxychains.subsystem.service.ServicesPluginConfiguration
@@ -36,8 +35,6 @@ import com.google.inject.Inject
 import com.google.inject.Injector
 import groovy.util.logging.Slf4j
 import io.reactivex.Maybe
-import io.reactivex.Observable
-import io.reactivex.ObservableSource
 import io.reactivex.schedulers.Schedulers
 import org.apache.commons.io.IOUtils
 import spock.guice.UseModules
@@ -70,11 +67,11 @@ import static java.util.stream.IntStream.range
 class StartCommandSpec extends Specification {
 
   @Inject
-  private SoxyChainsConfiguration soxyChainsConfiguration
+  private SoxyChainsContext soxyChainsConfiguration
   @Inject
   private Set<ImageRequirer> imageRequirers
   @Inject
-  private DockerConfiguration configuration
+  private DockerContext configuration
   @Inject
   private Set<ServicesPlugin> services
   @Inject
@@ -82,7 +79,7 @@ class StartCommandSpec extends Specification {
   @Inject
   private LayerService layerService
   @Inject
-  private Map<Class<? extends AbstractLayerConfiguration>, LayerProvider> providers
+  private Map<Class<? extends AbstractLayerContext>, LayerProvider> providers
   @Inject
   private ConsulProvider consulProvider
   @Inject
@@ -102,7 +99,7 @@ class StartCommandSpec extends Specification {
     File config  = new File(workDir, "config.yaml")
     workDir.deleteOnExit()
     IOUtils.copy(getClass().getResourceAsStream("config-install.yaml"), new FileOutputStream(config))
-    SoxyChainsApplication.main("up", "-c", config.getAbsolutePath())
+    Application.main("up", "-c", config.getAbsolutePath())
     def dockerClient     = TestUtils.dockerClient(configuration.getHosts().get(0))
     def dockerImages     = dockerClient.listImagesCmd().exec()
     def dockerContainers = dockerClient.listContainersCmd().withLabelFilter(ImmutableMap.of(SYSTEM_LABEL, "",NAMESPACE_LABEL, configuration.getNamespace()))
@@ -149,15 +146,18 @@ class StartCommandSpec extends Specification {
 
   def "it would be able to add nodes through the api" () {
     setup:
-    def torLayerNode  = new LayerNode(0, new TorNodeConfiguration())
-    def ovpnConfig    = TestUtils.findOnlineVPNConfiguration()
-    def ovpnLayerNode = new LayerNode(1, new OpenVPNNodeConfiguration().setConfiguration(new OpenVPNConfiguration()
-                                                        .setBase64Configuration(ovpnConfig)
-                                                        .setUser("vpngate")
-                                                        .setPassword("vpngate")))
+    def torLayer  = soxyChainsConfiguration.getLayers().get(0)
+    def ovpnLayer = soxyChainsConfiguration.getLayers().get(1)
+    def torLayerNode  = new LayerNode(0, torLayer, new TorNodeConfiguration())
+    List<LayerNode> ovpnLayerNodes = TestUtils.findOnlineVPNConfigurations(3).stream()
+      .map{ovpnConfig -> new LayerNode(1, ovpnLayer, new OpenVPNNodeConfiguration().setConfiguration(new OpenVPNConfiguration()
+      .setBase64Configuration(ovpnConfig)
+      .setUser("vpngate")
+      .setPassword("vpngate"))) }.collect(Collectors.toList() as Collector<? super Object, Object, Object>)
+
     def dockerClient  = TestUtils.dockerClient(configuration.getHosts().get(0))
-    def torLayerProvider = providers.get(TorLayerConfiguration.class)
-    def vpnLayerProvider = providers.get(OpenVPNLayerConfiguration.class)
+    def torLayerProvider = providers.get(TorLayerContext.class)
+    def vpnLayerProvider = providers.get(OpenVPNLayerContext.class)
     Class<? extends LayerProvider> torLayerProviderClass = (Class<? extends LayerProvider>) torLayerProvider.getClass()
     Class<? extends LayerProvider> vpnLayerProviderClass = (Class<? extends LayerProvider>) vpnLayerProvider.getClass()
     def torFilters       = filterLayerNode(torLayerProviderClass, 0, configuration)
@@ -165,7 +165,9 @@ class StartCommandSpec extends Specification {
 
     when:
     layerService.add(torLayerNode).blockingGet()
-    layerService.add(ovpnLayerNode).blockingGet()
+    fromIterable(ovpnLayerNodes)
+      .flatMapSingle{LayerNode layerNode -> layerService.add(layerNode).subscribeOn(Schedulers.io())}
+      .blockingSubscribe()
 
     then:
     // A tor node is present @ layer 0
@@ -182,9 +184,10 @@ class StartCommandSpec extends Specification {
 
   def "it would be able to remove nodes through the api" () {
     setup:
-    def layerNode     = new LayerNode(0, new TorNodeConfiguration())
+    def torLayer  = soxyChainsConfiguration.getLayers().get(0)
+    def layerNode     = new LayerNode(0, torLayer, new TorNodeConfiguration())
     def dockerClient  = TestUtils.dockerClient(configuration.getHosts().get(0))
-    def layerProvider = providers.get(TorLayerConfiguration.class)
+    def layerProvider = providers.get(TorLayerContext.class)
     Class<? extends LayerProvider> providerClass = (Class<? extends LayerProvider>) layerProvider.getClass()
     def filters       = filterLayerNode(providerClass, 0, configuration)
     //adding some nodes
@@ -263,7 +266,7 @@ class StartCommandSpec extends Specification {
         return getWithRetry({ ->
           def result = consul.getHealthChecksForService(service, QueryParams.DEFAULT).getValue()
             .stream().map{check -> (check.getStatus() == PASSING)}
-            .reduce(true, {a,b -> a && b})
+            .reduce(false, {a,b -> a || b})
           if(!result){
             throw new RuntimeException(format("Failed to get service '%s' as healthy.", service))
           }
@@ -286,13 +289,14 @@ class StartCommandSpec extends Specification {
     File config  = new File(workDir, "config.yaml")
     workDir.deleteOnExit()
     IOUtils.copy(getClass().getResourceAsStream("config-install.yaml"), new FileOutputStream(config))
-    SoxyChainsApplication.main("down", "-c", config.getAbsolutePath())
+    Application.main("down", "-c", config.getAbsolutePath())
     def dockerClient     = TestUtils.dockerClient(configuration.getHosts().get(0))
     def dockerImages     = dockerClient.listImagesCmd().exec()
     def dockerContainers = dockerClient.listContainersCmd().withLabelFilter(ImmutableMap.of(SYSTEM_LABEL, "",NAMESPACE_LABEL, configuration.getNamespace()))
       .exec().stream().filter{container -> container.getStatus().contains("Up")}.collect(Collectors.<Container>toList())
-    def layerNode     = new LayerNode(0, new TorNodeConfiguration())
-    def layerProvider = providers.get(TorLayerConfiguration.class)
+    def torLayer  = soxyChainsConfiguration.getLayers().get(0)
+    def layerNode     = new LayerNode(0, torLayer, new TorNodeConfiguration())
+    def layerProvider = providers.get(TorLayerContext.class)
     Class<? extends LayerProvider> providerClass = (Class<? extends LayerProvider>) layerProvider.getClass()
     def filters       = filterLayerNode(providerClass, 0, configuration)
     layerService.add(layerNode)
@@ -329,7 +333,8 @@ class StartCommandSpec extends Specification {
     @Override
     protected void configure() {
       InputStream is = getClass().getResourceAsStream("config-install.yaml")
-      install(new SoxyChainsModule(is))
+      install(new ConfigurationModule(is))
+      install(new SoxyChainsModule())
     }
   }
 

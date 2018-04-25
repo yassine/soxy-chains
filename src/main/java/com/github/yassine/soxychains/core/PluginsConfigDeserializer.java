@@ -36,12 +36,12 @@ import static net.jodah.typetools.TypeResolver.resolveRawArgument;
 import static net.jodah.typetools.TypeResolver.resolveRawArguments;
 
 @Slf4j
-public class PluginsConfigDeserializer<CONFIG extends PluginSetConfiguration<?>> extends StdDeserializer<CONFIG>{
+public class PluginsConfigDeserializer<C extends PluginSetConfiguration<?>> extends StdDeserializer<C>{
 
   private final Class<? extends Plugin> pluginContract;
-  private transient Function<Map<Class<? extends Plugin>, PluginConfiguration>, CONFIG> transform = map -> (CONFIG) new DefaultPluginSetConfiguration(map);
+  private transient Function<Map<Class<? extends Plugin>, PluginConfiguration>, C> transform = map -> (C) new DefaultPluginSetConfiguration(map);
 
-  public PluginsConfigDeserializer(Class<? extends Plugin> pluginContract, Function<Map<Class<? extends Plugin>, PluginConfiguration>, CONFIG> transform) {
+  public PluginsConfigDeserializer(Class<? extends Plugin> pluginContract, Function<Map<Class<? extends Plugin>, PluginConfiguration>, C> transform) {
     super(PluginSetConfiguration.class);
     this.pluginContract = pluginContract;
     this.transform = transform;
@@ -54,7 +54,7 @@ public class PluginsConfigDeserializer<CONFIG extends PluginSetConfiguration<?>>
 
   @SuppressWarnings({"unchecked"})
   @Override
-  public CONFIG deserialize(JsonParser jp, DeserializationContext context) throws IOException {
+  public C deserialize(JsonParser jp, DeserializationContext context) throws IOException {
     ObjectMapper mapper = (ObjectMapper) jp.getCodec();
     ObjectNode root     = mapper.readTree(jp);
     PropertyNamingStrategy propertyNamingStrategy = mapper.getPropertyNamingStrategy();
@@ -83,9 +83,9 @@ public class PluginsConfigDeserializer<CONFIG extends PluginSetConfiguration<?>>
   }
 
   @SneakyThrows
-  private <PLUGIN_CONFIG extends PluginConfiguration> PLUGIN_CONFIG safeRead(ObjectMapper mapper, Class pluginClass, String value) {
-    PLUGIN_CONFIG config = (PLUGIN_CONFIG) mapper.readValue(value, resolveRawArgument(Plugin.class, (Class<? extends Plugin<PLUGIN_CONFIG>>) pluginClass));
-    return config != null ? config : defaultConfig((Class<? extends Plugin<PLUGIN_CONFIG>>) pluginClass);
+  private <K extends PluginConfiguration> K safeRead(ObjectMapper mapper, Class pluginClass, String value) {
+    K config = (K) mapper.readValue(value, resolveRawArgument(Plugin.class, (Class<? extends Plugin<K>>) pluginClass));
+    return config != null ? config : defaultConfig((Class<? extends Plugin<K>>) pluginClass);
   }
 
   private boolean equalKeys(PropertyNamingStrategy propertyNamingStrategy, String foundKey, Class<? extends Plugin> pluginClass){

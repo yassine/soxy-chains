@@ -18,13 +18,13 @@ import static java.lang.String.format;
 import static java.util.Arrays.stream;
 
 @AutoService(LayerProvider.class)
-public class TorLayerProvider implements LayerProvider<TorLayerConfiguration, TorNodeConfiguration> {
+public class TorLayerProvider implements LayerProvider<TorLayerContext, TorNodeConfiguration> {
 
   private static final DockerImage IMAGE = new DockerImage("tor-node", URI.create("classpath://com/github/yassine/soxychains/subsystem/layer/spi/tor"), ImmutableMap.of());
   private static final String CONFIG_SEPARATOR = ",";
 
   @Override
-  public void configureNode(CreateContainerCmd containerCmd, TorNodeConfiguration nodeConfiguration, TorLayerConfiguration layerConfiguration) {
+  public void configureNode(CreateContainerCmd containerCmd, TorNodeConfiguration nodeConfiguration, TorLayerContext layerConfiguration) {
     // node configuration takes precedence over the layer configuration
     containerCmd.withEnv(
       Stream.of(
@@ -51,7 +51,7 @@ public class TorLayerProvider implements LayerProvider<TorLayerConfiguration, To
   }
 
   @Override
-  public DockerImage image(TorLayerConfiguration layerConfiguration) {
+  public DockerImage image(TorLayerContext layerConfiguration) {
     return IMAGE;
   }
 

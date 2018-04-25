@@ -2,7 +2,7 @@ package com.github.yassine.soxychains.subsystem.docker.image.task
 
 import com.github.yassine.soxychains.subsystem.docker.client.Docker
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider
-import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration
+import com.github.yassine.soxychains.subsystem.docker.config.DockerContext
 import com.github.yassine.soxychains.subsystem.docker.image.api.DockerImage
 import com.github.yassine.soxychains.subsystem.docker.image.api.ImageRequirer
 import io.reactivex.Maybe
@@ -12,12 +12,12 @@ import spock.lang.Specification
 class ImageUninstallTaskSpec extends Specification {
   Docker docker = Mock()
   DockerProvider dockerProvider = Mock()
-  DockerConfiguration configuration = new DockerConfiguration()
+  DockerContext configuration = new DockerContext()
   ImageRequirer imageRequirer = Mock()
   ImageUninstallTask task = new ImageUninstallTask([imageRequirer] as Set, dockerProvider, configuration)
 
   void setup () {
-    dockerProvider.dockers() >> [docker]
+    dockerProvider.dockers() >> Observable.fromIterable([docker])
     imageRequirer.require()  >> Observable.just(new DockerImage("test-image", null, null))
   }
 

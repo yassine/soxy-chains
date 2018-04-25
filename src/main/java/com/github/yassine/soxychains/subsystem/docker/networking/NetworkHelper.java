@@ -3,7 +3,7 @@ package com.github.yassine.soxychains.subsystem.docker.networking;
 
 import com.github.dockerjava.api.model.ContainerNetworkSettings;
 import com.github.yassine.soxychains.subsystem.docker.client.Docker;
-import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
+import com.github.yassine.soxychains.subsystem.docker.config.DockerContext;
 import com.github.yassine.soxychains.subsystem.service.gobetween.GobetweenConfiguration;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -20,7 +20,7 @@ public class NetworkHelper {
   public static final String SOXY_DRIVER_PROXY_HOST_OPTION = "soxy.proxyaddress";
   public static final String SOXY_DRIVER_PROXY_PORT_OPTION = "soxy.proxyport";
 
-  private final DockerConfiguration dockerConfiguration;
+  private final DockerContext dockerContext;
   private final GobetweenConfiguration gobetweenConfiguration;
 
   public Maybe<String> getContainerAddress(Docker docker, String containerName){
@@ -28,7 +28,7 @@ public class NetworkHelper {
       .flatMap(container ->
         ofNullable(container.getNetworkSettings())
           .map(ContainerNetworkSettings::getNetworks)
-          .map(networks -> networks.get(nameSpaceNetwork(dockerConfiguration, dockerConfiguration.getNetworkingConfiguration().getNetworkName())).getIpAddress())
+          .map(networks -> networks.get(nameSpaceNetwork(dockerContext, dockerContext.getNetworkingConfiguration().getNetworkName())).getIpAddress())
           .map(Maybe::just)
           .orElse(Maybe.empty())
       );
@@ -39,22 +39,22 @@ public class NetworkHelper {
       .flatMap(container ->
         ofNullable(container.getNetworkSettings())
           .map(ContainerNetworkSettings::getNetworks)
-          .map(networks -> networks.get(nameSpaceLayerNetwork(dockerConfiguration, layerIndex)).getIpAddress())
+          .map(networks -> networks.get(nameSpaceLayerNetwork(dockerContext, layerIndex)).getIpAddress())
           .map(Maybe::just)
           .orElse(Maybe.empty())
       );
   }
 
   public Maybe<String> getGobetweenAddress(Docker docker){
-    return getContainerAddress(docker, nameSpaceContainer(dockerConfiguration, gobetweenConfiguration.getServiceName()));
+    return getContainerAddress(docker, nameSpaceContainer(dockerContext, gobetweenConfiguration.getServiceName()));
   }
 
   public Maybe<String> getDNSAddress(Docker docker){
-    return getContainerAddress(docker, nameSpaceContainer(dockerConfiguration, dockerConfiguration.getNetworkingConfiguration().getDnsConfiguration().getServiceName()));
+    return getContainerAddress(docker, nameSpaceContainer(dockerContext, dockerContext.getNetworkingConfiguration().getDnsConfiguration().getServiceName()));
   }
 
   public Maybe<String> getDNSAddressAtLayer(Docker docker, Integer layerIndex){
-    return getContainerAddressAtLayer(docker, nameSpaceContainer(dockerConfiguration, dockerConfiguration.getNetworkingConfiguration().getDnsConfiguration().getServiceName()), layerIndex);
+    return getContainerAddressAtLayer(docker, nameSpaceContainer(dockerContext, dockerContext.getNetworkingConfiguration().getDnsConfiguration().getServiceName()), layerIndex);
   }
 
 }

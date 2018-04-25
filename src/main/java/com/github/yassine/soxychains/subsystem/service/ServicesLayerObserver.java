@@ -2,8 +2,8 @@ package com.github.yassine.soxychains.subsystem.service;
 
 import com.github.dockerjava.api.model.Network;
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
-import com.github.yassine.soxychains.subsystem.docker.config.DockerConfiguration;
-import com.github.yassine.soxychains.subsystem.layer.AbstractLayerConfiguration;
+import com.github.yassine.soxychains.subsystem.docker.config.DockerContext;
+import com.github.yassine.soxychains.subsystem.layer.AbstractLayerContext;
 import com.github.yassine.soxychains.subsystem.layer.LayerObserver;
 import com.google.auto.service.AutoService;
 import com.google.inject.Inject;
@@ -24,15 +24,15 @@ import static io.reactivex.Observable.fromIterable;
 public class ServicesLayerObserver implements LayerObserver {
 
   private final DockerProvider dockerProvider;
-  private final DockerConfiguration dockerConfiguration;
+  private final DockerContext dockerContext;
   private final Set<ServicesPlugin> servicesPlugins;
   private final Injector injector;
 
   @Override
-  public Maybe<Boolean> onLayerAdd(Integer index, AbstractLayerConfiguration layerConfiguration, Network network) {
-    return fromIterable(dockerProvider.dockers())
+  public Maybe<Boolean> onLayerAdd(Integer index, AbstractLayerContext layerConfiguration, Network network) {
+    return dockerProvider.dockers()
       .flatMap(docker -> fromIterable(servicesPlugins).map(this::configOf).flatMapMaybe(
-        serviceConfiguration -> docker.findContainer(nameSpaceContainer(dockerConfiguration, serviceConfiguration.serviceName()))
+        serviceConfiguration -> docker.findContainer(nameSpaceContainer(dockerContext, serviceConfiguration.serviceName()))
           .flatMap(container -> docker.joinNetwork(container, network.getName()))
       )
     ).reduce(true, AND_OPERATOR)
@@ -40,10 +40,10 @@ public class ServicesLayerObserver implements LayerObserver {
   }
 
   @Override
-  public Maybe<Boolean> onLayerPreRemove(Integer index, AbstractLayerConfiguration layerConfiguration, Network network) {
-    return fromIterable(dockerProvider.dockers())
+  public Maybe<Boolean> onLayerPreRemove(Integer index, AbstractLayerContext layerConfiguration, Network network) {
+    return dockerProvider.dockers()
       .flatMap(docker -> fromIterable(servicesPlugins).map(this::configOf).flatMapMaybe(
-        serviceConfiguration -> docker.findContainer(nameSpaceContainer(dockerConfiguration, serviceConfiguration.serviceName()))
+        serviceConfiguration -> docker.findContainer(nameSpaceContainer(dockerContext, serviceConfiguration.serviceName()))
           .flatMap(container -> docker.leaveNetwork(container, network.getName()))
         )
       ).reduce(true, AND_OPERATOR)

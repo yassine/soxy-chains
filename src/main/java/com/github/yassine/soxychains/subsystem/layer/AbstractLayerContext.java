@@ -11,7 +11,7 @@ import java.io.Serializable;
   include  = JsonTypeInfo.As.PROPERTY,
   property = "type"
 )
-public abstract class AbstractLayerConfiguration implements Serializable{
+public abstract class AbstractLayerContext implements Serializable{
   protected int maxNodes    = 50;
   protected int clusterServicePort = 1080;
   protected int localServicePort   = 1081;

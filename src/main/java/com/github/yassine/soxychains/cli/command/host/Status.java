@@ -1,11 +1,13 @@
 package com.github.yassine.soxychains.cli.command.host;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.yassine.soxychains.SoxyChainsContext;
 import com.github.yassine.soxychains.cli.command.ConfigurableCommand;
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
 import com.google.inject.Inject;
 import io.airlift.airline.Command;
 import io.airlift.airline.Option;
+import io.reactivex.Observable;
 import io.reactivex.schedulers.Schedulers;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +21,6 @@ import java.util.ArrayList;
 
 import static com.github.yassine.soxychains.core.FluentUtils.runAndGet;
 import static com.github.yassine.soxychains.core.FluentUtils.runAndGetAsSingle;
-import static io.reactivex.Observable.fromIterable;
 
 @Slf4j
 @Command(name = "status", description = "displays the status of the docker hosts")
@@ -29,6 +30,8 @@ public class Status extends ConfigurableCommand{
   private DockerProvider dockerProvider;
   @Inject
   private ObjectMapper objectMapper;
+  @Inject
+  private SoxyChainsContext soxyChainsContext;
 
   @Option(name = "-o", description = "The path to the output file")
   public String outputPath;
@@ -36,7 +39,9 @@ public class Status extends ConfigurableCommand{
   @Override
   public void run() {
     validateOptions();
-    fromIterable(dockerProvider.clients())
+
+    Observable.fromIterable(soxyChainsContext.getDocker().getHosts())
+      .map(dockerHostConfiguration -> dockerProvider.getClient(dockerHostConfiguration))
       .flatMapSingle( client -> runAndGetAsSingle( () -> client.pingCmd().exec(), new HostStatus(client.configuration().getUri().getHost(), true) )
         .onErrorReturn( exception -> runAndGet(() -> log.error(exception.getMessage()), new HostStatus(client.configuration().getUri().getHost(), false)))
         .subscribeOn(Schedulers.io())

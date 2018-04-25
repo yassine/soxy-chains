@@ -3,7 +3,7 @@ package com.github.yassine.soxychains.cli.command.host
 import com.fasterxml.jackson.annotation.JsonAutoDetect
 import com.fasterxml.jackson.annotation.PropertyAccessor
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.github.yassine.soxychains.SoxyChainsApplication
+import com.github.yassine.soxychains.cli.Application
 import com.google.common.io.Files
 import org.apache.commons.io.IOUtils
 import spock.lang.Specification
@@ -20,7 +20,7 @@ class StatusSpec extends Specification {
     File output  = new File(workDir, "output.yaml")
     workDir.deleteOnExit()
     IOUtils.copy(getClass().getResourceAsStream("config-status.yaml"), new FileOutputStream(config))
-    SoxyChainsApplication.main("host", "status", "-c", config.getAbsolutePath(), "-o", output.getAbsolutePath())
+    Application.main("host", "status", "-c", config.getAbsolutePath(), "-o", output.getAbsolutePath())
     ObjectMapper mapper = new ObjectMapper()
     mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
     def outputStatuses = mapper.readValue(output, Status.HostStatus[].class)

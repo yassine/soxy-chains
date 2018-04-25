@@ -18,7 +18,10 @@ public class UpCommand extends ConfigurableCommand{
     Boolean success = phaseRunner.runPhase(Phase.INSTALL).blockingGet();
     if(success){
       //bootstrap the services
-      phaseRunner.runPhase(Phase.START).blockingGet();
+      success = phaseRunner.runPhase(Phase.START).blockingGet();
+      if(success){
+        log.info("Done without errors.");
+      }
     }else{
       log.info("Phase install exited with error. Skipping Start phase.");
     }

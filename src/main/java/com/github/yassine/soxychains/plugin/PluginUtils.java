@@ -9,12 +9,12 @@ public class PluginUtils {
   private PluginUtils() {}
 
   @SneakyThrows
-  public static <CONFIG extends PluginConfiguration> CONFIG defaultConfig(Class <? extends Plugin<CONFIG>> pluginContract){
+  public static <C extends PluginConfiguration> C defaultConfig(Class <? extends Plugin<C>> pluginContract){
     return configClassOf(pluginContract).newInstance();
   }
 
-  public static <CONFIG extends PluginConfiguration> Class<CONFIG> configClassOf(Class <? extends Plugin<CONFIG>> pluginContract){
-    return (Class<CONFIG>) resolveRawArgument(Plugin.class, pluginContract);
+  public static <C extends PluginConfiguration> Class<C> configClassOf(Class <? extends Plugin<C>> pluginContract){
+    return (Class<C>) resolveRawArgument(Plugin.class, pluginContract);
   }
   public static String configKey(Class<? extends Plugin> pluginContract){
     Class<? extends PluginConfiguration> configClass = ((Class<? extends PluginConfiguration>) resolveRawArgument(Plugin.class, pluginContract));

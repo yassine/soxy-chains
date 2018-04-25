@@ -19,7 +19,6 @@ import lombok.SneakyThrows;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.Strings;
 
@@ -27,6 +26,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -60,7 +60,7 @@ public class TestUtils {
   }
 
   @SneakyThrows
-  public static String findOnlineVPNConfiguration(){
+  public static List<String> findOnlineVPNConfigurations(int max){
     String responseString = new OkHttpClient.Builder().build()
       .newCall(new Request.Builder().url("http://130.158.75.33/api/iphone").build())
       .execute()
@@ -72,12 +72,13 @@ public class TestUtils {
         .collect(Collectors.<String>toList())
     );
     Reader reader = new StringReader(data);
-    CSVRecord serverRecord = CSVFormat.DEFAULT.withFirstRecordAsHeader().parse(reader).getRecords()
+
+    return CSVFormat.DEFAULT.withFirstRecordAsHeader().parse(reader).getRecords()
       .stream()
       .filter(record -> TestUtils.isTCPVPNConfiguration(record.get(record.size() - 1)))
-      .collect(Collectors.toList())
-      .get(0);
-    return serverRecord.get(serverRecord.size() - 1);
+      .map(serverRecord -> serverRecord.get(serverRecord.size() - 1))
+      .limit(max)
+      .collect(Collectors.toList());
   }
 
 }

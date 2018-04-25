@@ -1,5 +1,7 @@
-package com.github.yassine.soxychains;
+package com.github.yassine.soxychains.cli;
 
+import com.github.yassine.soxychains.ConfigurationModule;
+import com.github.yassine.soxychains.SoxyChainsModule;
 import com.github.yassine.soxychains.cli.command.CommandGroup;
 import com.github.yassine.soxychains.cli.command.ConfigurableCommand;
 import com.google.common.collect.*;
@@ -26,7 +28,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public class SoxyChainsCLI {
+class SoxyChainsCLI {
 
   private final Cli<Runnable> cli;
   private final Set<Module> modules;
@@ -38,14 +40,15 @@ public class SoxyChainsCLI {
     if(runnable instanceof ConfigurableCommand){
       String configPath = ((ConfigurableCommand) runnable).getConfigPath();
       FileInputStream fis = new FileInputStream(new File(configPath));
-      ms.add(new SoxyChainsModule(fis));
+      ms.add(new ConfigurationModule(fis));
+      ms.add(new SoxyChainsModule());
       Injector injector = Guice.createInjector(ms);
       injector.injectMembers(runnable);
     }
     runnable.run();
   }
 
-  public static class Builder {
+  static class Builder {
 
     private Package cliCommandsPackage;
     private Set<Module> modules = new HashSet<>();
@@ -63,7 +66,7 @@ public class SoxyChainsCLI {
     @SuppressWarnings("unchecked")
     @SneakyThrows
     public SoxyChainsCLI build(){
-      ClassPath classPath = ClassPath.from(SoxyChainsApplication.class.getClassLoader());
+      ClassPath classPath = ClassPath.from(Application.class.getClassLoader());
       Set<Package> packages = classPath.getTopLevelClassesRecursive(cliCommandsPackage.getName())
         .stream()
         .filter(c -> c.getSimpleName().equals("package-info"))
