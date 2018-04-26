@@ -19,6 +19,7 @@ project {
     'sonar.projectName' 'soxy-chains'
     'sonar.projectVersion' '${project.version}'
     'sonar.projectKey' 'com.github.yassine:soxy-chains'
+    'version.undertow' '2.0.4.Final'
   }
   dependencies {
     dependency 'com.ecwid.consul:consul-api:1.3.1'
@@ -46,6 +47,8 @@ project {
     dependency 'io.airlift:airline:0.8'
     dependency 'io.github.lukehutch:fast-classpath-scanner:2.0.8'
     dependency 'io.reactivex.rxjava2:rxjava:2.1.12'
+    dependency 'io.undertow:undertow-core:${version.undertow}'
+    dependency 'io.undertow:undertow-servlet:${version.undertow}'
     dependency 'net.jodah:typetools:0.5.0'
     dependency 'org.glassfish:javax.el:3.0.1-b08'
     dependency 'org.hibernate.validator:hibernate-validator:6.0.5.Final'
