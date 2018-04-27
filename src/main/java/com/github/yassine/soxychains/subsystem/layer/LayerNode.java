@@ -6,6 +6,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor @Getter
 public class LayerNode {
   private final int layerIndex;
-  private final AbstractLayerContext layerConfiguration;
+  private final AbstractLayerConfiguration layerConfiguration;
   private final LayerNodeConfiguration nodeConfiguration;
 }

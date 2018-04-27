@@ -18,11 +18,11 @@ class DockerProviderSupportSpec extends Specification {
   DockerProvider dockerProvider
 
   def "getClient: it should return a configured docker client"() {
-    given:
+    when:
     DockerHostConfiguration host = dockerConfiguration.getHosts().get(0)
     DockerClient docker = dockerProvider.getClient(host)
     docker.pingCmd().exec()
-    expect:
+    then:
     true //no exception
   }
 

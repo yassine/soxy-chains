@@ -2,7 +2,7 @@ package com.github.yassine.soxychains.subsystem.service.gobetween;
 
 import com.github.dockerjava.api.model.Network;
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
-import com.github.yassine.soxychains.subsystem.layer.AbstractLayerContext;
+import com.github.yassine.soxychains.subsystem.layer.AbstractLayerConfiguration;
 import com.github.yassine.soxychains.subsystem.layer.LayerObserver;
 import com.google.auto.service.AutoService;
 import com.google.inject.Inject;
@@ -21,7 +21,7 @@ public class GobetweenLayerObserver implements LayerObserver {
   private final DockerProvider dockerProvider;
 
   @Override
-  public Maybe<Boolean> onLayerAdd(Integer index, AbstractLayerContext layerConfiguration, Network network) {
+  public Maybe<Boolean> onLayerAdd(Integer index, AbstractLayerConfiguration layerConfiguration, Network network) {
     return dockerProvider.dockers()
       .flatMapSingle(docker ->
         gobetweenProvider.get(docker.hostConfiguration()).register(index, layerConfiguration)
@@ -29,7 +29,7 @@ public class GobetweenLayerObserver implements LayerObserver {
   }
 
   @Override
-  public Maybe<Boolean> onLayerPreRemove(Integer index, AbstractLayerContext layerConfiguration, Network network) {
+  public Maybe<Boolean> onLayerPreRemove(Integer index, AbstractLayerConfiguration layerConfiguration, Network network) {
     return dockerProvider.dockers()
       .flatMapSingle(docker ->
         gobetweenProvider.get(docker.hostConfiguration()).unRegister(index, layerConfiguration)

@@ -17,12 +17,12 @@ import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
 
 @AutoService(LayerProvider.class)
-public class OpenVPNLayerProvider implements LayerProvider<OpenVPNLayerContext, OpenVPNNodeConfiguration> {
+public class OpenVPNLayerProvider implements LayerProvider<OpenVPNLayerConfiguration, OpenVPNNodeConfiguration> {
 
   private static final DockerImage IMAGE = new DockerImage("openvpn-node", URI.create("classpath://com/github/yassine/soxychains/subsystem/layer/spi/ovpn"), ImmutableMap.of());
 
   @Override
-  public void configureNode(CreateContainerCmd containerCmd, OpenVPNNodeConfiguration nodeConfiguration, OpenVPNLayerContext layerConfiguration) {
+  public void configureNode(CreateContainerCmd containerCmd, OpenVPNNodeConfiguration nodeConfiguration, OpenVPNLayerConfiguration layerConfiguration) {
     containerCmd.withEnv(
       Stream.of(
         of("OVPN_CONFIG="+nodeConfiguration.getConfiguration().getBase64Configuration()),
@@ -37,7 +37,7 @@ public class OpenVPNLayerProvider implements LayerProvider<OpenVPNLayerContext, 
   }
 
   @Override
-  public DockerImage image(OpenVPNLayerContext layerConfiguration) {
+  public DockerImage image(OpenVPNLayerConfiguration layerConfiguration) {
     return IMAGE;
   }
 }

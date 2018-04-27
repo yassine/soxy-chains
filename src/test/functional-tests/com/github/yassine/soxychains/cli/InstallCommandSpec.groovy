@@ -6,6 +6,7 @@ import com.github.yassine.soxychains.TestUtils
 import com.github.yassine.soxychains.subsystem.docker.config.DockerContext
 import com.github.yassine.soxychains.subsystem.docker.image.api.DockerImage
 import com.github.yassine.soxychains.subsystem.docker.image.api.ImageRequirer
+import com.github.yassine.soxychains.web.WebAPIModule
 import com.google.common.io.Files
 import com.google.inject.AbstractModule
 import com.google.inject.Inject
@@ -15,6 +16,7 @@ import spock.guice.UseModules
 import spock.lang.Specification
 import spock.lang.Stepwise
 
+import static com.github.yassine.soxychains.cli.Application.main
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.nameSpaceImage
 import static java.util.Arrays.stream
 
@@ -32,7 +34,7 @@ class InstallCommandSpec extends Specification {
     File config  = new File(workDir, "config.yaml")
     workDir.deleteOnExit()
     IOUtils.copy(getClass().getResourceAsStream("config-install.yaml"), new FileOutputStream(config))
-    Application.main("install", "-c", config.getAbsolutePath())
+    main("install", "-c", config.getAbsolutePath())
     def dockerClient  = TestUtils.dockerClient(configuration.getHosts().get(0))
     def dockerImages  = dockerClient.listImagesCmd().exec()
     expect:
@@ -54,7 +56,7 @@ class InstallCommandSpec extends Specification {
     File config  = new File(workDir, "config.yaml")
     workDir.deleteOnExit()
     IOUtils.copy(getClass().getResourceAsStream("config-install.yaml"), new FileOutputStream(config))
-    Application.main("uninstall", "-c", config.getAbsolutePath())
+    main("uninstall", "-c", config.getAbsolutePath())
     def dockerClient = TestUtils.dockerClient(configuration.getHosts().get(0))
     def dockerImages  = dockerClient.listImagesCmd().exec()
 
@@ -75,6 +77,7 @@ class InstallCommandSpec extends Specification {
       InputStream is = getClass().getResourceAsStream("config-install.yaml")
       install(new ConfigurationModule(is))
       install(new SoxyChainsModule())
+      install(new WebAPIModule())
     }
   }
 

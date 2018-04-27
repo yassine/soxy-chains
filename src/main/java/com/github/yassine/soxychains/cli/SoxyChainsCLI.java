@@ -4,11 +4,13 @@ import com.github.yassine.soxychains.ConfigurationModule;
 import com.github.yassine.soxychains.SoxyChainsModule;
 import com.github.yassine.soxychains.cli.command.CommandGroup;
 import com.github.yassine.soxychains.cli.command.ConfigurableCommand;
+import com.github.yassine.soxychains.cli.command.RequiresExtraModule;
 import com.google.common.collect.*;
 import com.google.common.reflect.ClassPath;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
+import com.machinezoo.noexception.Exceptions;
 import io.airlift.airline.Cli;
 import io.airlift.airline.Command;
 import io.airlift.airline.Help;
@@ -26,6 +28,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.Arrays.stream;
+
 @Slf4j
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 class SoxyChainsCLI {
@@ -42,6 +46,11 @@ class SoxyChainsCLI {
       FileInputStream fis = new FileInputStream(new File(configPath));
       ms.add(new ConfigurationModule(fis));
       ms.add(new SoxyChainsModule());
+      if(runnable.getClass().isAnnotationPresent(RequiresExtraModule.class)){
+        stream(runnable.getClass().getAnnotation(RequiresExtraModule.class).value())
+          .map(clazz -> Exceptions.sneak().get(clazz::newInstance))
+          .forEach(ms::add);
+      }
       Injector injector = Guice.createInjector(ms);
       injector.injectMembers(runnable);
     }

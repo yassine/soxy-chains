@@ -3,7 +3,7 @@ package com.github.yassine.soxychains.subsystem.service;
 import com.github.dockerjava.api.model.Network;
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerContext;
-import com.github.yassine.soxychains.subsystem.layer.AbstractLayerContext;
+import com.github.yassine.soxychains.subsystem.layer.AbstractLayerConfiguration;
 import com.github.yassine.soxychains.subsystem.layer.LayerObserver;
 import com.google.auto.service.AutoService;
 import com.google.inject.Inject;
@@ -29,7 +29,7 @@ public class ServicesLayerObserver implements LayerObserver {
   private final Injector injector;
 
   @Override
-  public Maybe<Boolean> onLayerAdd(Integer index, AbstractLayerContext layerConfiguration, Network network) {
+  public Maybe<Boolean> onLayerAdd(Integer index, AbstractLayerConfiguration layerConfiguration, Network network) {
     return dockerProvider.dockers()
       .flatMap(docker -> fromIterable(servicesPlugins).map(this::configOf).flatMapMaybe(
         serviceConfiguration -> docker.findContainer(nameSpaceContainer(dockerContext, serviceConfiguration.serviceName()))
@@ -40,7 +40,7 @@ public class ServicesLayerObserver implements LayerObserver {
   }
 
   @Override
-  public Maybe<Boolean> onLayerPreRemove(Integer index, AbstractLayerContext layerConfiguration, Network network) {
+  public Maybe<Boolean> onLayerPreRemove(Integer index, AbstractLayerConfiguration layerConfiguration, Network network) {
     return dockerProvider.dockers()
       .flatMap(docker -> fromIterable(servicesPlugins).map(this::configOf).flatMapMaybe(
         serviceConfiguration -> docker.findContainer(nameSpaceContainer(dockerContext, serviceConfiguration.serviceName()))

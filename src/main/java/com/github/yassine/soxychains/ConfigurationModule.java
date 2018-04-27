@@ -49,7 +49,6 @@ public class ConfigurationModule extends AbstractModule {
     bind(SoxyChainsContext.class).toProvider(configurationProvider).in(Singleton.class);
   }
 
-
   @SuppressWarnings("unchecked")
   @Provides
   @Singleton
@@ -105,9 +104,8 @@ public class ConfigurationModule extends AbstractModule {
       public SoxyChainsContext load(String s) throws Exception {
         SoxyChainsContext configuration = mapper.readValue(configStream, SoxyChainsContext.class);
         Set<ConstraintViolation<SoxyChainsContext>> constraintViolations = validator.validate(configuration);
-        if(!constraintViolations.isEmpty()){
+        if (!constraintViolations.isEmpty())
           throw new ConstraintViolationException(constraintViolations);
-        }
         return configuration;
       }
     });
@@ -119,5 +117,5 @@ public class ConfigurationModule extends AbstractModule {
   }
 
   @Retention(RetentionPolicy.RUNTIME) @BindingAnnotation
-  @interface Configuration{}
+  public @interface Configuration{}
 }

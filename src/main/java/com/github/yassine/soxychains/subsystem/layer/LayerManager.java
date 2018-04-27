@@ -23,7 +23,7 @@ public class LayerManager {
 
   private final SoxyChainsContext soxyChainsContext;
   private final DockerProvider dockerProvider;
-  private final Map<Class<? extends AbstractLayerContext>, LayerProvider> layerProviders;
+  private final Map<Class<? extends AbstractLayerConfiguration>, LayerProvider> layerProviders;
 
   /**
    * Finds a host where it is possible to add a node at a specific tunneling layer/level
@@ -31,7 +31,7 @@ public class LayerManager {
    * @return
    */
   public Maybe<Docker> findCapableHost(final int layerIndex){
-    AbstractLayerContext layerConfiguration = soxyChainsContext.getLayers().get(layerIndex);
+    AbstractLayerConfiguration layerConfiguration = soxyChainsContext.getLayers().get(layerIndex);
     LayerProvider provider = layerProviders.get(layerConfiguration.getClass());
     return Maybe.just(soxyChainsContext.getLayers().get(layerIndex))
             .flatMapObservable(layerConfig -> dockerProvider.clients()
@@ -43,7 +43,7 @@ public class LayerManager {
             .map(dockerClient -> dockerProvider.get(dockerClient.configuration()));
   }
 
-  private Single<Boolean> isCapable(SoxyChainsDockerClient client, AbstractLayerContext layerConfiguration, LayerProvider provider, int layerIndex){
+  private Single<Boolean> isCapable(SoxyChainsDockerClient client, AbstractLayerConfiguration layerConfiguration, LayerProvider provider, int layerIndex){
     return fromFuture(supplyAsync(() -> {
       int nodeCount = client.listContainersCmd()
         .withLabelFilter(
@@ -54,7 +54,7 @@ public class LayerManager {
     }));
   }
 
-  private int allocation(DockerContext dockerContext, AbstractLayerContext layerConfiguration){
+  private int allocation(DockerContext dockerContext, AbstractLayerConfiguration layerConfiguration){
     int nodesCount = layerConfiguration.getMaxNodes();
     int hostCount = dockerContext.getHosts().size();
     return nodesCount/hostCount;

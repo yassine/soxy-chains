@@ -20,6 +20,7 @@ project {
     'sonar.projectVersion' '${project.version}'
     'sonar.projectKey' 'com.github.yassine:soxy-chains'
     'version.undertow' '2.0.4.Final'
+    'version.jersey' '2.22.2'
   }
   dependencies {
     dependency 'com.ecwid.consul:consul-api:1.3.1'
@@ -27,6 +28,7 @@ project {
     dependency 'com.fasterxml.jackson.core:jackson-core:2.8.5'
     dependency 'com.fasterxml.jackson.core:jackson-databind:2.8.5'
     dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.8.5'
+    dependency 'org.glassfish.jersey.media:jersey-media-json-jackson:${version.jersey}'
     dependency{
       groupId 'com.github.docker-java'
       artifactId 'docker-java'
@@ -38,11 +40,12 @@ project {
         }
       }
     }
-    dependency 'com.github.yassine:guice-artifacts:0.2.1'
     dependency 'com.github.yassine:gobetween-java-client:0.1.2'
+    dependency 'com.github.yassine:guice-artifacts:0.2.1'
     dependency 'com.google.auto.service:auto-service:1.0-rc3'
     dependency 'com.google.guava:guava:24.1-jre'
     dependency 'com.google.inject.extensions:guice-multibindings:4.1.0'
+    dependency 'com.google.inject.extensions:guice-servlet:4.2.0'
     dependency 'com.google.inject:guice:4.2.0'
     dependency 'io.airlift:airline:0.8'
     dependency 'io.github.lukehutch:fast-classpath-scanner:2.0.8'
@@ -53,6 +56,7 @@ project {
     dependency 'org.glassfish:javax.el:3.0.1-b08'
     dependency 'org.hibernate.validator:hibernate-validator:6.0.5.Final'
     dependency 'org.projectlombok:lombok:1.16.18:provided'
+    dependency 'org.rapidoid:rapidoid-http-server:5.5.4'
     dependency{
       groupId 'com.machinezoo.noexception'
       artifactId 'noexception'
@@ -71,13 +75,16 @@ project {
     dependency 'org.apache.logging.log4j:log4j-1.2-api:2.10.0'
     dependency 'org.slf4j:slf4j-api:1.7.21'
     //test
+    dependency 'cglib:cglib-nodep:3.2.5:test'
+    dependency 'com.jayway.jsonpath:json-path:2.4.0:test'
     dependency 'com.squareup.okhttp3:okhttp:3.10.0:test'
+    dependency 'io.rest-assured:rest-assured:3.1.0:test'
+    dependency 'junit:junit:4.12:test'
     dependency 'org.apache.commons:commons-csv:1.5:test'
+    dependency 'org.assertj:assertj-core:3.9.0:test'
+    dependency 'org.codehaus.groovy:groovy-all:2.4.13:test'
     dependency 'org.spockframework:spock-core:1.1-groovy-2.4:test'
     dependency 'org.spockframework:spock-guice:1.1-groovy-2.4:test'
-    dependency 'org.codehaus.groovy:groovy-all:2.4.13:test'
-    dependency 'junit:junit:4.12:test'
-    dependency 'cglib:cglib-nodep:3.2.5:test'
   }
   build {
     pluginManagement {

@@ -4,8 +4,11 @@ import com.github.yassine.soxychains.ConfigurationModule
 import com.github.yassine.soxychains.SoxyChainsContext
 import com.github.yassine.soxychains.SoxyChainsModule
 import com.github.yassine.soxychains.subsystem.docker.config.DockerHostConfiguration
+import com.github.yassine.soxychains.web.WebAPIModule
 import com.google.inject.AbstractModule
 import com.google.inject.Inject
+import com.google.inject.Injector
+import com.google.inject.servlet.ServletModule
 import spock.guice.UseModules
 import spock.lang.Specification
 
@@ -15,6 +18,8 @@ class HostManagerSupportSpec extends Specification {
   private HostManager hostManager
   @Inject
   private SoxyChainsContext soxyChainsContext
+  @Inject
+  private Injector injector
 
   def "List: it should return the online hosts only"() {
     setup:
@@ -32,6 +37,8 @@ class HostManagerSupportSpec extends Specification {
       InputStream is = getClass().getResourceAsStream("host-manager-test.yaml")
       install(new ConfigurationModule(is))
       install(new SoxyChainsModule())
+      install(new WebAPIModule())
+      install(new ServletModule())
     }
   }
 }

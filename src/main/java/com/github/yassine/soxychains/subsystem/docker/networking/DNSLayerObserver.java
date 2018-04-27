@@ -3,7 +3,7 @@ package com.github.yassine.soxychains.subsystem.docker.networking;
 import com.github.dockerjava.api.model.Network;
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerContext;
-import com.github.yassine.soxychains.subsystem.layer.AbstractLayerContext;
+import com.github.yassine.soxychains.subsystem.layer.AbstractLayerConfiguration;
 import com.github.yassine.soxychains.subsystem.layer.LayerObserver;
 import com.google.auto.service.AutoService;
 import com.google.inject.Inject;
@@ -23,7 +23,7 @@ public class DNSLayerObserver implements LayerObserver {
   private final DockerContext dockerContext;
 
   @Override
-  public Maybe<Boolean> onLayerAdd(Integer index, AbstractLayerContext layerConfiguration, Network network) {
+  public Maybe<Boolean> onLayerAdd(Integer index, AbstractLayerConfiguration layerConfiguration, Network network) {
     return dockerProvider.dockers().flatMapMaybe(docker ->
         docker.findContainer(nameSpaceContainer(dockerContext, dnsConfiguration.getServiceName()))
           .flatMap(container -> docker.joinNetwork(container, network.getName()))
@@ -32,7 +32,7 @@ public class DNSLayerObserver implements LayerObserver {
   }
 
   @Override
-  public Maybe<Boolean> onLayerPreRemove(Integer index, AbstractLayerContext layerConfiguration, Network network) {
+  public Maybe<Boolean> onLayerPreRemove(Integer index, AbstractLayerConfiguration layerConfiguration, Network network) {
     return dockerProvider.dockers().flatMapSingle(docker ->
       docker.findContainer(nameSpaceContainer(dockerContext, dnsConfiguration.getServiceName()))
         .flatMap(container -> docker.leaveNetwork(container, network.getName()))

@@ -1,0 +1,9 @@
+docker:
+  namespace: soxy-chains-testing
+  hosts:
+   - uri: unix:///var/run/docker.sock
+layers:
+  - type: tor
+    exit_nodes:
+      - '{fr}'
+  - type: ovpn

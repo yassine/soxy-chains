@@ -39,7 +39,7 @@ import static java.util.concurrent.CompletableFuture.supplyAsync;
 @RequiredArgsConstructor(onConstructor = @__(@Inject), access = AccessLevel.PUBLIC)
 class LayerServiceSupport implements LayerService {
 
-  private final Map<Class<? extends AbstractLayerContext>, LayerProvider> providers;
+  private final Map<Class<? extends AbstractLayerConfiguration>, LayerProvider> providers;
   private final SoxyChainsContext soxyChainsContext;
   private final LayerManager layerManager;
   private final DockerContext dockerContext;
@@ -50,7 +50,7 @@ class LayerServiceSupport implements LayerService {
 
   @Override
   public Single<Boolean> add(LayerNode node) {
-    AbstractLayerContext layerConfiguration = node.getLayerConfiguration();
+    AbstractLayerConfiguration layerConfiguration = node.getLayerConfiguration();
     LayerProvider provider = providers.get(layerConfiguration.getClass());
     return layerManager.findCapableHost(node.getLayerIndex())
       .flatMap(docker -> {
@@ -85,7 +85,7 @@ class LayerServiceSupport implements LayerService {
 
   @Override
   public Single<Boolean> remove(LayerNode node) {
-    AbstractLayerContext layerConfiguration = node.getLayerConfiguration();
+    AbstractLayerConfiguration layerConfiguration = node.getLayerConfiguration();
     LayerProvider provider = providers.get(layerConfiguration.getClass());
     return dockerProvider.clients()
       .flatMap(docker ->
@@ -102,7 +102,7 @@ class LayerServiceSupport implements LayerService {
       .single(false);
   }
 
-  public Single<Boolean> addLayer(int index, AbstractLayerContext layerConfiguration){
+  public Single<Boolean> addLayer(int index, AbstractLayerConfiguration layerConfiguration){
     //create a network
     return dockerProvider.dockers()
       .flatMapMaybe(docker -> docker.createNetwork(nameSpaceLayerNetwork(dockerContext, index),
@@ -119,7 +119,7 @@ class LayerServiceSupport implements LayerService {
         )).reduce(true, AND_OPERATOR);
   }
 
-  public Single<Boolean> removeLayer(int index, AbstractLayerContext layerConfiguration){
+  public Single<Boolean> removeLayer(int index, AbstractLayerConfiguration layerConfiguration){
     return dockerProvider.dockers()
       .flatMapMaybe(docker ->
         docker.findNetwork(nameSpaceLayerNetwork(dockerContext, index)).toObservable()
@@ -138,7 +138,7 @@ class LayerServiceSupport implements LayerService {
 
   private CreateNetworkCmd configureNetworkOptions(int upperLayerIndex, CreateNetworkCmd createNetworkCmd, Docker docker){
     if(upperLayerIndex >= 0){
-      AbstractLayerContext upperLayerConfiguration = soxyChainsContext.getLayers().get(upperLayerIndex);
+      AbstractLayerConfiguration upperLayerConfiguration = soxyChainsContext.getLayers().get(upperLayerIndex);
       networkHelper.getGobetweenAddress(docker)
         .toObservable()
         .blockingSubscribe(gobetweenAddress -> createNetworkCmd.withOptions(

@@ -16,7 +16,7 @@ import java.util.Map;
 public class LayersImageRequirer implements ImageRequirer{
 
   private final SoxyChainsContext configuration;
-  private final Map<Class<? extends AbstractLayerContext>, LayerProvider> mapLayerConfiguration;
+  private final Map<Class<? extends AbstractLayerConfiguration>, LayerProvider> mapLayerConfiguration;
 
   @Override
   public Observable<DockerImage> require() {

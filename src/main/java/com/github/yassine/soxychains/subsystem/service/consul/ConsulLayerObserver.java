@@ -7,7 +7,7 @@ import com.ecwid.consul.v1.catalog.model.CatalogService;
 import com.github.dockerjava.api.model.Network;
 import com.github.yassine.soxychains.subsystem.docker.client.Docker;
 import com.github.yassine.soxychains.subsystem.docker.client.DockerProvider;
-import com.github.yassine.soxychains.subsystem.layer.AbstractLayerContext;
+import com.github.yassine.soxychains.subsystem.layer.AbstractLayerConfiguration;
 import com.github.yassine.soxychains.subsystem.layer.LayerObserver;
 import com.google.auto.service.AutoService;
 import com.google.common.collect.ImmutableList;
@@ -34,7 +34,7 @@ public class ConsulLayerObserver implements LayerObserver {
   private final ConsulConfiguration consulConfiguration;
 
   @Override
-  public Maybe<Boolean> onLayerAdd(Integer index, AbstractLayerContext layerConfiguration, Network network) {
+  public Maybe<Boolean> onLayerAdd(Integer index, AbstractLayerConfiguration layerConfiguration, Network network) {
     return dockerProvider.dockers()
       .map(Docker::hostConfiguration)
       //register the cluster-wide service across all hosts
@@ -67,7 +67,7 @@ public class ConsulLayerObserver implements LayerObserver {
   }
 
   @Override
-  public Maybe<Boolean> onLayerPreRemove(Integer index, AbstractLayerContext layerConfiguration, Network network) {
+  public Maybe<Boolean> onLayerPreRemove(Integer index, AbstractLayerConfiguration layerConfiguration, Network network) {
     return dockerProvider.dockers()
       .map(Docker::hostConfiguration)
       //register the cluster-wide service

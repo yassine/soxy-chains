@@ -6,7 +6,7 @@ import com.github.yassine.gobetween.api.configuration.service.TCPServiceConfigur
 import com.github.yassine.gobetween.api.configuration.service.discovery.ConsulServiceDiscovery;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerContext;
 import com.github.yassine.soxychains.subsystem.docker.config.DockerHostConfiguration;
-import com.github.yassine.soxychains.subsystem.layer.AbstractLayerContext;
+import com.github.yassine.soxychains.subsystem.layer.AbstractLayerConfiguration;
 import com.github.yassine.soxychains.subsystem.service.consul.ConsulConfiguration;
 import com.github.yassine.soxychains.subsystem.service.consul.ConsulUtils;
 import com.github.yassine.soxychains.subsystem.service.consul.ServiceScope;
@@ -32,7 +32,7 @@ public class GobetweenSupport implements Gobetween {
   private final ConsulConfiguration consulConfiguration;
 
   @Override
-  public Single<Boolean> register(int layerIndex, AbstractLayerContext layerConfiguration) {
+  public Single<Boolean> register(int layerIndex, AbstractLayerConfiguration layerConfiguration) {
     return fromFuture(supplyAsync( () -> {
       try{
         final String localServiceName   = namespaceLayerService(layerIndex, ServiceScope.LOCAL);
@@ -87,7 +87,7 @@ public class GobetweenSupport implements Gobetween {
   }
 
   @Override
-  public Single<Boolean> unRegister(int layerIndex, AbstractLayerContext layerConfiguration) {
+  public Single<Boolean> unRegister(int layerIndex, AbstractLayerConfiguration layerConfiguration) {
     return fromFuture(supplyAsync( () -> {
       try{
         final String localServiceName   = namespaceLayerService(layerIndex, ServiceScope.LOCAL);
