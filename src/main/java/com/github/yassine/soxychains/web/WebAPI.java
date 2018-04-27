@@ -49,9 +49,9 @@ public class WebAPI {
     App.shutdown();
     Setup.shutdownAll();
     Env.reset();
-    App.resetGlobalState();
     Conf.reset();
     Conf.ROOT.reset();
+    App.resetGlobalState();
     cache.cleanUp();
   }
 

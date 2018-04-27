@@ -8,7 +8,6 @@ import com.github.yassine.soxychains.web.WebAPIModule
 import com.google.inject.AbstractModule
 import com.google.inject.Inject
 import com.google.inject.Injector
-import com.google.inject.servlet.ServletModule
 import spock.guice.UseModules
 import spock.lang.Specification
 
@@ -38,7 +37,6 @@ class HostManagerSupportSpec extends Specification {
       install(new ConfigurationModule(is))
       install(new SoxyChainsModule())
       install(new WebAPIModule())
-      install(new ServletModule())
     }
   }
 }

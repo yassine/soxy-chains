@@ -31,21 +31,13 @@ class HostResourceSpec extends Specification {
   private WebAPIConfiguration apiConfiguration
 
   def setupSpec(){
-
-    App.shutdown()
-    Setup.shutdownAll()
-    Env.reset()
-    Conf.reset()
-    Conf.ROOT.reset()
-    App.resetGlobalState()
-
     fromFuture(supplyAsync({  -> webAPI.startup(); return true })).subscribeOn(Schedulers.io())
       .subscribe()
     Thread.sleep(5000L)
   }
 
   def cleanupSpec (){
-    println App.status()
+    webAPI.stop()
   }
 
   def "get: it should return the list of online hosts"() {
