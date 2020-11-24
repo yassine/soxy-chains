@@ -21,19 +21,16 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 import static com.github.yassine.soxychains.core.FluentUtils.runAndGet;
 import static com.github.yassine.soxychains.core.FluentUtils.runAndGetAsMaybe;
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.labelizeNamedEntity;
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static io.reactivex.Maybe.fromFuture;
 import static io.reactivex.Maybe.just;
 import static java.lang.String.format;
 import static java.util.Arrays.stream;
 import static java.util.Optional.ofNullable;
-import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 
 @RequiredArgsConstructor @Slf4j @Accessors(fluent = true)
@@ -43,7 +40,7 @@ class DockerSupport implements Docker {
 
   @Override
   public Maybe<Image> findImageByTag(String imageTag) {
-    return fromFuture( supplyAsync( () ->
+    return Maybe.fromCallable(( () ->
       client.listImagesCmd()
         .exec()
         .stream()
@@ -52,8 +49,7 @@ class DockerSupport implements Docker {
         .findAny()
         .map(Maybe::just)
         .orElse(Maybe.empty())
-    ) )
-    .flatMap(m -> m).subscribeOn(Schedulers.io());
+    )).flatMap(it -> it).subscribeOn(Schedulers.io());
   }
 
   @Override
@@ -84,20 +80,19 @@ class DockerSupport implements Docker {
 
   @Override
   public Maybe<Network> findNetwork(String networkName) {
-    return fromFuture(CompletableFuture.supplyAsync(() ->
+    return Maybe.fromCallable(() ->
       client.listNetworksCmd()
         .exec().stream()
         .filter(network -> network.getName().equals(networkName))
         .findAny()
         .map(Maybe::just)
         .orElse(Maybe.empty()).subscribeOn(Schedulers.io())
-    ))
-    .flatMap(v -> v);
+    ).flatMap(v -> v);
   }
 
   @Override
   public Maybe<Boolean> removeNetwork(String networkName, Consumer<RemoveNetworkCmd> beforeRemove, Consumer<String> afterRemove) {
-    return fromFuture(supplyAsync(() ->
+    return Maybe.fromCallable(() ->
       client.listNetworksCmd().exec().stream()
         .filter(network -> network.getName().equals(networkName))
         .findAny()
@@ -112,7 +107,7 @@ class DockerSupport implements Docker {
           .map(v -> true)
         )
         .orElseGet(() -> runAndGet(() -> log.info(format("Cannot remove network '%s'. The network doesn't exist", networkName)), just(false)))
-    ))
+    )
     .flatMap(v -> v);
   }
 
@@ -123,7 +118,7 @@ class DockerSupport implements Docker {
 
   @Override
   public Maybe<Container> findContainer(String containerName) {
-    return fromFuture(supplyAsync(() -> client.listContainersCmd()
+    return Maybe.fromCallable(() -> client.listContainersCmd()
       .withShowAll(true)
       .withLabelFilter(
         ImmutableMap.of(
@@ -137,12 +132,12 @@ class DockerSupport implements Docker {
       .findAny()
       .map(Maybe::just)
       .orElseGet(Maybe::empty)
-    )).flatMap(v -> v);
+    ).flatMap(v -> v);
   }
 
   @Override
   public Maybe<Container> runContainer(String containerName, String image, Consumer<CreateContainerCmd> beforeCreate, Consumer<String> afterCreate, Consumer<StartContainerCmd> beforeStart, Consumer<String> afterStart) {
-    return fromFuture( supplyAsync( () -> {
+    return Maybe.fromCallable ( () -> {
         try{
           return findContainer(containerName).map(Optional::of).defaultIfEmpty(Optional.empty()).blockingGet()
             .map(
@@ -177,8 +172,7 @@ class DockerSupport implements Docker {
           log.error(e.getMessage(), e);
           return CreateContainerStatus.of(null, format("Couldn't create container '%s' : %s", containerName, e.getMessage()), false);
         }
-      })
-    ).flatMap(createContainerStatus -> {
+      }).flatMap(createContainerStatus -> {
       log.info(createContainerStatus.message());
       if(createContainerStatus.container() != null && !createContainerStatus.isStarted()){
         try{
@@ -249,7 +243,7 @@ class DockerSupport implements Docker {
 
   @Override
   public Maybe<Boolean> stopContainer(String containerName, Consumer<StopContainerCmd> beforeStop, Consumer<String> afterStop, Consumer<RemoveContainerCmd> beforeRemove, Consumer<String> afterRemove) {
-    return fromFuture( supplyAsync( () -> {
+    return Maybe.fromCallable( () -> {
         try{
           return findContainer(containerName).map(Optional::of).defaultIfEmpty(Optional.empty()).blockingGet()
             .map(container -> {
@@ -274,7 +268,6 @@ class DockerSupport implements Docker {
           return Pair.of( (String) null, false);
         }
       }
-      )
     ).flatMap(pair -> {
       if(pair.getKey() != null){
         try{

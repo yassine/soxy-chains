@@ -43,7 +43,6 @@ import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Stepwise
 
-import java.util.concurrent.CompletableFuture
 import java.util.stream.Collector
 import java.util.stream.Collectors
 
@@ -57,7 +56,7 @@ import static com.github.yassine.soxychains.subsystem.service.consul.ConsulUtils
 import static com.github.yassine.soxychains.subsystem.service.consul.ConsulUtils.portShift
 import static com.github.yassine.soxychains.subsystem.service.consul.ServiceScope.CLUSTER
 import static com.github.yassine.soxychains.subsystem.service.consul.ServiceScope.LOCAL
-import static io.reactivex.Observable.fromFuture
+import static io.reactivex.Observable.fromCallable
 import static io.reactivex.Observable.fromIterable
 import static java.lang.String.format
 import static java.util.Arrays.asList
@@ -242,7 +241,7 @@ class StartCommandSpec extends Specification {
     def docker        = dockerProvider.get(configuration.getHosts().get(0))
     expect:
     fromIterable(range(1, soxyChainsConfiguration.getLayers().size()).boxed().collect(Collectors.<Integer>toList()))
-      .flatMap{layerIndex -> fromFuture(CompletableFuture.supplyAsync{ ->
+      .flatMap{layerIndex -> fromCallable({ ->
         def networks = dockerClient.listNetworksCmd().exec()
         def currentNetwork = networks.stream().filter{net -> net.getName().contains(nameSpaceLayerNetwork(configuration, layerIndex))}.findAny().get()
         def parentConfiguration = soxyChainsConfiguration.getLayers().get(layerIndex - 1)

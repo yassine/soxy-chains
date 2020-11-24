@@ -10,10 +10,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.machinezoo.noexception.Exceptions.sneak;
-import static io.reactivex.Maybe.fromFuture;
 import static java.lang.Thread.sleep;
 import static java.util.Optional.ofNullable;
-import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 @Slf4j
 public class FluentUtils {
@@ -28,15 +26,15 @@ public class FluentUtils {
   public static final BiFunction<Boolean, Boolean, Boolean> AND_OPERATOR = (a, b) -> a && b;
 
   public static <V> Single<V> runAndGetAsSingle(Runnable runnable, V returnValue){
-    return Single.fromFuture(supplyAsync(() -> runAndGet(runnable, returnValue)));
+    return Single.fromCallable(() -> runAndGet(runnable, returnValue));
   }
 
   public static <V> Maybe<V> runAndGetAsMaybe(Runnable runnable, V returnValue){
-    return fromFuture(supplyAsync(() -> runAndGet(runnable, returnValue)));
+    return Maybe.fromCallable(() -> runAndGet(runnable, returnValue));
   }
 
   public static <V> Maybe<V> getWithRetry(Supplier<V> supplier, Function<Integer, String> successMessage, Function<Integer, String> errorMessage, final int maxRetries, final Long interval){
-    return fromFuture(supplyAsync(() -> {
+    return Maybe.fromCallable((() -> {
       final AtomicInteger ai = new AtomicInteger(maxRetries);
       while (ai.getAndDecrement() > 0) {
         try {

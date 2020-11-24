@@ -15,8 +15,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import java.util.Map;
 
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.filterLayerNode;
-import static io.reactivex.Single.fromFuture;
-import static java.util.concurrent.CompletableFuture.supplyAsync;
+import static io.reactivex.Single.fromCallable;
 
 @RequiredArgsConstructor(onConstructor = @__(@Inject), access = AccessLevel.PUBLIC)
 public class LayerManager {
@@ -44,14 +43,14 @@ public class LayerManager {
   }
 
   private Single<Boolean> isCapable(SoxyChainsDockerClient client, AbstractLayerConfiguration layerConfiguration, LayerProvider provider, int layerIndex){
-    return fromFuture(supplyAsync(() -> {
+    return fromCallable(() -> {
       int nodeCount = client.listContainersCmd()
         .withLabelFilter(
           filterLayerNode(provider.getClass(), layerIndex, soxyChainsContext.getDocker())
         ).exec().size();
       int maxNodeCount = allocation(soxyChainsContext.getDocker(), layerConfiguration);
       return nodeCount < maxNodeCount;
-    }));
+    });
   }
 
   private int allocation(DockerContext dockerContext, AbstractLayerConfiguration layerConfiguration){

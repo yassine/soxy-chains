@@ -30,10 +30,9 @@ import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.*;
 import static com.github.yassine.soxychains.subsystem.service.consul.ConsulUtils.namespaceLayerService;
 import static com.github.yassine.soxychains.subsystem.service.consul.ConsulUtils.portShift;
 import static com.machinezoo.noexception.Exceptions.sneak;
-import static io.reactivex.Observable.fromFuture;
+import static io.reactivex.Observable.fromCallable;
 import static io.reactivex.Observable.fromIterable;
 import static java.util.UUID.randomUUID;
-import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Inject), access = AccessLevel.PUBLIC)
@@ -89,12 +88,11 @@ class LayerServiceSupport implements LayerService {
     LayerProvider provider = providers.get(layerConfiguration.getClass());
     return dockerProvider.clients()
       .flatMap(docker ->
-        fromFuture(supplyAsync(() -> docker.listContainersCmd().withLabelFilter(filterLayerNode(provider.getClass(), node.getLayerIndex(), dockerContext)).exec()))
+        fromCallable(() -> docker.listContainersCmd().withLabelFilter(filterLayerNode(provider.getClass(), node.getLayerIndex(), dockerContext)).exec())
           .subscribeOn(Schedulers.io())
           .flatMap(Observable::fromIterable)
           .filter(container -> sneak().get(() -> objectMapper.readValue(container.getLabels().get(getConfigLabelOfLayerNode(provider.getClass())), node.getNodeConfiguration().getClass())).equals(node.getNodeConfiguration()))
-          .map(container -> Pair.of(docker, container))
-      )
+          .map(container -> Pair.of(docker, container)))
       .take(1)
       .flatMapMaybe(pair -> dockerProvider.get(pair.getKey().configuration())
                               .stopContainer(namespaceLayerNode(dockerContext, node.getLayerIndex(), pair.getValue().getLabels().get(RANDOM_LABEL))))

@@ -24,7 +24,6 @@ import java.util.Set;
 import static com.github.yassine.soxychains.core.FluentUtils.AND_OPERATOR;
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.*;
 import static io.reactivex.Observable.*;
-import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 @AutoService(Task.class) @ReverseDependsOn(ServicesStopTask.class) @RunOn(Phase.STOP)
 @RequiredArgsConstructor(onConstructor = @__(@Inject), access = AccessLevel.PUBLIC)
@@ -42,11 +41,11 @@ public class LayerStopTask implements Task{
               dockerProvider.clients().subscribeOn(Schedulers.io())
                 .flatMap(docker ->
                   fromIterable(layerServices).flatMap(currentLayerService ->
-                    fromFuture(supplyAsync(
+                    fromCallable(
                       docker.listContainersCmd()
                         .withLabelFilter(
                           filterLayerNode(currentLayerService.getClass(), dockerContext)
-                        )::exec))
+                        )::exec)
                       .flatMap(Observable::fromIterable)
                       .map(container -> Pair.of(docker, container)))
                 )

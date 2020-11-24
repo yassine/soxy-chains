@@ -5,12 +5,12 @@ services:
   - docker
 script:
   - mvn clean test post-integration-test
-after_success:
-  - mvn coveralls:report
-  - mvn sonar:sonar
-addons:
-  sonarcloud:
-    organization: yassine-github
+#after_success:
+#  - mvn coveralls:report
+#  - mvn sonar:sonar
+#addons:
+#  sonarcloud:
+#    organization: yassine-github
 cache:
   directories:
     - '$HOME/.m2/repository'

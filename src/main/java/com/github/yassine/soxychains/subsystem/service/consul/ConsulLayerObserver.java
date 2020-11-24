@@ -22,8 +22,7 @@ import static com.github.yassine.soxychains.core.FluentUtils.AND_OPERATOR;
 import static com.github.yassine.soxychains.core.FluentUtils.runAndGet;
 import static com.github.yassine.soxychains.subsystem.service.consul.ConsulUtils.namespaceLayerService;
 import static com.github.yassine.soxychains.subsystem.service.consul.ConsulUtils.portShift;
-import static io.reactivex.Observable.fromFuture;
-import static java.util.concurrent.CompletableFuture.supplyAsync;
+import static io.reactivex.Observable.fromCallable;
 
 @AutoService(LayerObserver.class) @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Inject), access = AccessLevel.PUBLIC)
@@ -40,7 +39,7 @@ public class ConsulLayerObserver implements LayerObserver {
       //register the cluster-wide service across all hosts
       .flatMap(dockerHost ->
         dockerProvider.dockers()
-          .flatMap(docker -> fromFuture(supplyAsync(() -> {
+          .flatMap(docker -> fromCallable(() -> {
             ConsulClient consul = consulProvider.get(docker.hostConfiguration());
             String host = dockerHost.getHostname();
             if(!consul.getCatalogServices(QueryParams.DEFAULT).getValue().containsKey(namespaceLayerService(index, ServiceScope.CLUSTER))
@@ -62,7 +61,7 @@ public class ConsulLayerObserver implements LayerObserver {
               consul.agentServiceRegister(service);
             }
             return true;
-          })).onErrorReturn(e-> runAndGet(()-> log.error(e.getMessage(), e), false)).subscribeOn(Schedulers.io()))
+          }).onErrorReturn(e-> runAndGet(()-> log.error(e.getMessage(), e), false)).subscribeOn(Schedulers.io()))
       ).reduce(true, AND_OPERATOR).toMaybe().subscribeOn(Schedulers.io());
   }
 
@@ -73,7 +72,7 @@ public class ConsulLayerObserver implements LayerObserver {
       //register the cluster-wide service
       .flatMap(dockerHost ->
         dockerProvider.dockers()
-          .flatMap(docker -> fromFuture(supplyAsync(() -> {
+          .flatMap(docker -> fromCallable(() -> {
             String host = dockerHost.getHostname();
             ConsulClient consul = consulProvider.get(docker.hostConfiguration());
             if(consul.getCatalogServices(QueryParams.DEFAULT).getValue().containsKey(namespaceLayerService(index, ServiceScope.CLUSTER))
@@ -84,7 +83,7 @@ public class ConsulLayerObserver implements LayerObserver {
               consulProvider.get(docker.hostConfiguration()).agentServiceDeregister(formatServiceId(namespaceLayerService(index, ServiceScope.CLUSTER), host));
             }
             return true;
-          })).onErrorReturn(e-> runAndGet(()-> log.error(e.getMessage(), e), false)).subscribeOn(Schedulers.io()))
+          }).onErrorReturn(e-> runAndGet(()-> log.error(e.getMessage(), e), false)).subscribeOn(Schedulers.io()))
       ).reduce(true, AND_OPERATOR).toMaybe().subscribeOn(Schedulers.io());
   }
 

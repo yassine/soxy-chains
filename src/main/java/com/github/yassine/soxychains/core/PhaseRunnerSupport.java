@@ -9,9 +9,8 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import static com.github.yassine.soxychains.core.FluentUtils.AND_OPERATOR;
-import static io.reactivex.Observable.fromFuture;
+import static io.reactivex.Observable.fromCallable;
 import static io.reactivex.Observable.fromIterable;
-import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Inject), access = AccessLevel.PUBLIC)
@@ -22,20 +21,20 @@ class PhaseRunnerSupport implements PhaseRunner {
   @SneakyThrows
   public Single<Boolean> runPhase(Phase phase) {
     return fromIterable(taskScheduleProvider.get(phase))
-      .flatMap(tasksWave -> fromFuture(supplyAsync(() -> fromIterable(tasksWave)
-          .flatMapSingle(task ->
-            Single.fromFuture(supplyAsync(() -> {
+      .flatMap(tasksWave -> fromCallable(() -> fromIterable(tasksWave)
+          .flatMap(task ->
+            fromCallable(() -> {
               log.info("Executing task '{}'", task.name());
               Boolean result = task.execute().blockingGet();
               log.info("Successfully Executed task '{}'. Output: {}", task.name(), result);
               return result;
-            }))
+            })
             .subscribeOn(Schedulers.io())
             .doOnError( exception -> {
               log.error("An error while executing task '{}'", task.name());
               log.error(exception.getMessage(), exception);
             }).subscribeOn(Schedulers.io())
-          ).reduce(true, AND_OPERATOR).blockingGet())))
+          ).reduce(true, AND_OPERATOR).blockingGet()))
       .reduce(true, AND_OPERATOR);
   }
 

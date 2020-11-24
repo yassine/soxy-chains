@@ -13,7 +13,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static java.lang.String.format;
-import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 @Slf4j @RequiredArgsConstructor
@@ -30,7 +29,7 @@ class SyncDockerExecutor<R, C extends SyncDockerCmd<R> > {
   public Maybe<R> execute(){
     Preconditions.checkNotNull(cmd, "command can't be null");
     Preconditions.checkNotNull(configuration);
-    return Maybe.fromFuture(supplyAsync(() -> {
+    return Maybe.fromCallable(() -> {
       try{
         beforeExecute.ifPresent(before -> before.accept(cmd));
         R result = cmd.exec();
@@ -45,7 +44,7 @@ class SyncDockerExecutor<R, C extends SyncDockerCmd<R> > {
         log.error(e.getMessage(), e);
         return Maybe.<R>empty();
       }
-    })).flatMap(v -> v).subscribeOn(Schedulers.io());
+    }).flatMap(v -> v).subscribeOn(Schedulers.io());
   }
 
   public SyncDockerExecutor<R, C> withSuccessFormatter(Function<R, String> successFormatter){

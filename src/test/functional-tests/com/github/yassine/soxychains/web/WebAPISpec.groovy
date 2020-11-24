@@ -14,8 +14,7 @@ import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Stepwise
 
-import static io.reactivex.Observable.fromFuture
-import static java.util.concurrent.CompletableFuture.supplyAsync
+import static io.reactivex.Observable.fromCallable
 
 @UseModules(TestModule) @Stepwise
 class WebAPISpec extends Specification {
@@ -29,7 +28,7 @@ class WebAPISpec extends Specification {
 
   def "It should start the api server as per configuration"() {
     when:
-    fromFuture(supplyAsync({  -> webAPI.startup(); return true })).onErrorResumeNext(Observable.empty()).subscribeOn(Schedulers.io())
+    fromCallable({  -> webAPI.startup(); return true }).onErrorResumeNext(Observable.empty()).subscribeOn(Schedulers.io())
       .subscribe()
     Thread.sleep(5000L)
     def responseNotFound = new OkHttpClient.Builder().build()

@@ -18,9 +18,8 @@ import lombok.extern.slf4j.Slf4j;
 
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.nameSpaceContainer;
 import static com.github.yassine.soxychains.subsystem.service.consul.ConsulUtils.namespaceLayerService;
-import static io.reactivex.Single.fromFuture;
+import static io.reactivex.Single.fromCallable;
 import static java.lang.String.format;
-import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 @RequiredArgsConstructor @Accessors(fluent = true) @Slf4j
 public class GobetweenSupport implements Gobetween {
@@ -33,7 +32,7 @@ public class GobetweenSupport implements Gobetween {
 
   @Override
   public Single<Boolean> register(int layerIndex, AbstractLayerConfiguration layerConfiguration) {
-    return fromFuture(supplyAsync( () -> {
+    return fromCallable( () -> {
       try{
         final String localServiceName   = namespaceLayerService(layerIndex, ServiceScope.LOCAL);
         final String clusterServiceName = namespaceLayerService(layerIndex, ServiceScope.CLUSTER);
@@ -83,12 +82,12 @@ public class GobetweenSupport implements Gobetween {
         log.error(e.getMessage(), e);
         return false;
       }
-    }));
+    });
   }
 
   @Override
   public Single<Boolean> unRegister(int layerIndex, AbstractLayerConfiguration layerConfiguration) {
-    return fromFuture(supplyAsync( () -> {
+    return fromCallable( () -> {
       try{
         final String localServiceName   = namespaceLayerService(layerIndex, ServiceScope.LOCAL);
         final String clusterServiceName = namespaceLayerService(layerIndex, ServiceScope.CLUSTER);
@@ -106,7 +105,7 @@ public class GobetweenSupport implements Gobetween {
         log.error(e.getMessage(), e);
         return false;
       }
-    }));
+    });
   }
 
 }

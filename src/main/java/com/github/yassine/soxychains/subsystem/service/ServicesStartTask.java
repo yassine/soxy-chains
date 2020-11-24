@@ -24,9 +24,8 @@ import java.util.Set;
 import static com.github.yassine.soxychains.core.FluentUtils.AND_OPERATOR;
 import static com.github.yassine.soxychains.plugin.PluginUtils.configClassOf;
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.*;
-import static io.reactivex.Observable.fromFuture;
+import static io.reactivex.Observable.fromCallable;
 import static io.reactivex.Observable.fromIterable;
-import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 @Slf4j @DependsOn(NetworkingStartupTask.class)
 @RunOn(Phase.START) @AutoService(Task.class)
@@ -49,7 +48,7 @@ public class ServicesStartTask implements Task{
       //as waves of tasks that can be executed in parallel.
       .flatMap(docker -> fromIterable(taskScheduler.scheduleInstances(services))
           //for each wave of services
-          .flatMap(servicesWave -> fromFuture(supplyAsync(() -> fromIterable(servicesWave)
+          .flatMap(servicesWave -> fromCallable(() -> fromIterable(servicesWave)
               //for each service
               .flatMapMaybe(service ->
                 //create & start the container that relates to the given service
@@ -74,7 +73,6 @@ public class ServicesStartTask implements Task{
               .flatMapSingle(service -> (Single<Boolean>) service.isReady(docker.hostConfiguration(), configOf(service)))
               // reduce (over each service) the results as a single boolean value
               .defaultIfEmpty(false).reduce(true, AND_OPERATOR).blockingGet())
-            )
           )
       // reduce (over each host) the results as a single boolean value
       ).reduce(true, AND_OPERATOR).subscribeOn(Schedulers.io());

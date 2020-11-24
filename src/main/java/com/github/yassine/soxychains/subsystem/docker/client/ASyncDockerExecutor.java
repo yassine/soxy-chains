@@ -13,7 +13,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static java.lang.String.format;
-import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType") @Slf4j
 class ASyncDockerExecutor<C extends AsyncDockerCmd<C, A>, A, K extends ResultCallback<A>, R> {
@@ -41,7 +40,7 @@ class ASyncDockerExecutor<C extends AsyncDockerCmd<C, A>, A, K extends ResultCal
     Preconditions.checkNotNull(callback);
     Preconditions.checkNotNull(resultExtractor);
 
-    return Maybe.fromFuture(supplyAsync(() -> {
+    return Maybe.fromCallable(() -> {
       try{
         beforeExecute.ifPresent(before -> before.accept(cmd));
         cmd.exec(callback);
@@ -54,7 +53,7 @@ class ASyncDockerExecutor<C extends AsyncDockerCmd<C, A>, A, K extends ResultCal
         log.error(errorFormatter.apply(e));
         return Maybe.<R>empty();
       }
-    })).flatMap(v -> v).subscribeOn(Schedulers.io());
+    }).flatMap(v -> v).subscribeOn(Schedulers.io());
   }
 
   Function<K, R> getResultExtractor(){

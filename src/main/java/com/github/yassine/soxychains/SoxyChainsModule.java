@@ -6,9 +6,7 @@ import com.github.yassine.soxychains.subsystem.docker.DockerModule;
 import com.github.yassine.soxychains.subsystem.layer.LayerModule;
 import com.github.yassine.soxychains.subsystem.service.ServicesModule;
 import com.google.inject.AbstractModule;
-import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor
 public class SoxyChainsModule extends AbstractModule {
 
   @Override

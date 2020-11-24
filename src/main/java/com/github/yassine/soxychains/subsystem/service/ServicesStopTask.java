@@ -23,9 +23,8 @@ import static com.github.yassine.soxychains.core.FluentUtils.AND_OPERATOR;
 import static com.github.yassine.soxychains.plugin.PluginUtils.configClassOf;
 import static com.github.yassine.soxychains.subsystem.docker.NamespaceUtils.nameSpaceContainer;
 import static com.google.common.collect.Lists.reverse;
-import static io.reactivex.Observable.fromFuture;
+import static io.reactivex.Observable.fromCallable;
 import static io.reactivex.Observable.fromIterable;
-import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 @Slf4j
 @RunOn(Phase.STOP) @AutoService(Task.class) @ReverseDependsOn(NetworkingStopTask.class)
@@ -45,7 +44,7 @@ public class ServicesStopTask implements Task{
       //Services are stopped in the reverse order of their startup
       .flatMap(docker -> fromIterable(reverse(taskScheduler.scheduleInstances(services)))
           //for each wave of services
-          .flatMap(servicesWave -> fromFuture(supplyAsync(() -> fromIterable(servicesWave)
+          .flatMap(servicesWave -> fromCallable(() -> fromIterable(servicesWave)
               .flatMapMaybe(service ->
                 //stop and remove the container that relates to the given service
                 docker.stopContainer(nameSpaceContainer(dockerContext, configOf(service).serviceName()))
@@ -55,7 +54,6 @@ public class ServicesStopTask implements Task{
               // reduce the results as a single boolean value
               .reduce(true, AND_OPERATOR).blockingGet())
             )
-          )
       ).subscribeOn(Schedulers.io()).reduce(true, AND_OPERATOR);
   }
 
